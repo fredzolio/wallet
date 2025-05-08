@@ -1,0 +1,132 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      retries: 5
+    ports: ["5432:5432"]
+
+  redis:
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    ports: ["6379:6379"]
+
+  # Interface web para gerenciar o PostgreSQL
+  pgadmin:
+    image: dpage/pgadmin4:8
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"   # acessar em http://localhost:5050
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # Keycloak para autenticação e autorização
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: ${KC_DB}
+      KC_DB_URL: ${KC_DB_URL}
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KC_FEATURES: ${KC_FEATURES}
+    ports:
+      - "8080:8080"
+    command: ["start-dev", "--health-enabled=true"]
+    depends_on:
+      db: { condition: service_healthy }
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    restart: unless-stopped
+
+  # Prometheus para coleta de métricas
+  prometheus:
+    image: prom/prometheus:v2.49.1
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+
+  # Grafana para visualização de métricas
+  grafana:
+    image: grafana/grafana:10.3.3
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=${GF_USERS_ALLOW_SIGN_UP}
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
+  api:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_started }
+      keycloak: { condition: service_started }
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS}
+      ALGORITHM: ${ALGORITHM}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      OAUTH_CALLBACK_URL: ${OAUTH_CALLBACK_URL}
+      # Configurações Keycloak
+      KEYCLOAK_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      USE_KEYCLOAK: ${USE_KEYCLOAK}
+      # MFA
+      MFA_ISSUER: ${MFA_ISSUER}
+      # Configurações Google GenAI para chatbot
+      GOOGLE_GENAI_API_KEY: ${GOOGLE_GENAI_API_KEY}
+      GOOGLE_GENAI_MODEL: ${GOOGLE_GENAI_MODEL}
+      USE_LLM: ${USE_LLM}
+      # Outras
+      ENABLE_PROMETHEUS: ${ENABLE_PROMETHEUS}
+      API_V1_STR: ${API_V1_STR}
+      PROJECT_NAME: ${PROJECT_NAME}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports: ["8000:8000"]
+    volumes:
+      - ./app:/app/app
+
+volumes:
+  db_data:
+  redis_data:
+  pgadmin_data:
+  keycloak_data:
+  prometheus_data:
+  grafana_data:
