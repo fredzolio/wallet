@@ -39,29 +39,6 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:23.0
-    environment:
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_DB: ${KC_DB}
-      KC_DB_URL: ${KC_DB_URL}
-      KC_DB_USERNAME: ${KC_DB_USERNAME}
-      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
-      KC_FEATURES: ${KC_FEATURES}
-      KC_HTTP_ENABLED: "true" 
-      KC_PROXY: "edge"      
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
-    ports:
-      - "8088:8080"
-    command: ["start-dev", "--health-enabled=true", "--http-enabled=true"]
-    depends_on:
-      db: { condition: service_healthy }
-    volumes:
-      - keycloak_data:/opt/keycloak/data
-    restart: unless-stopped
-
   prometheus:
     image: prom/prometheus:v2.49.1
     volumes:
@@ -109,11 +86,6 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       OAUTH_CALLBACK_URL: ${OAUTH_CALLBACK_URL}
-      KEYCLOAK_URL: ${KEYCLOAK_URL}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
-      USE_KEYCLOAK: ${USE_KEYCLOAK}
       # MFA
       MFA_ISSUER: ${MFA_ISSUER}
       GOOGLE_GENAI_API_KEY: ${GOOGLE_GENAI_API_KEY}

@@ -45,10 +45,3 @@ class MFALogin(BaseModel):
     username: EmailStr
     password: str
     code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
-
-class KeycloakToken(BaseModel):
-    """Schema para token do Keycloak."""
-    access_token: str
-    refresh_token: str
-    token_type: str
-    expires_in: int
