@@ -185,11 +185,15 @@ async def refresh(
     if is_blacklisted:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token revogado (JTI blacklisted)")
     
-    stored_user_id_bytes = await redis.get(f"refresh_token_jti:{refresh_jti}")
-    if not stored_user_id_bytes:
+    stored_user_id = await redis.get(f"refresh_token_jti:{refresh_jti}")
+    if not stored_user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido, expirado ou JTI não encontrado no Redis")
     
-    user_id_str = stored_user_id_bytes.decode('utf-8')
+    # Converter para string se for bytes, manter como está se já for string
+    if isinstance(stored_user_id, bytes):
+        user_id_str = stored_user_id.decode('utf-8')
+    else:
+        user_id_str = stored_user_id
     
     user = await db.get(User, uuid.UUID(user_id_str))
     if not user or not user.is_active:
