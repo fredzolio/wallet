@@ -120,16 +120,38 @@ async def login(
 @limiter.limit("10/minute")
 async def login_mfa(
     request: Request,
-    mfa_data: MFALogin,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    code: str = None,
     db: AsyncSession = Depends(get_db)
 ):
     """
     Login com autenticação de dois fatores (MFA).
+    
+    O código MFA pode ser enviado como parte do form_data no campo password no formato "senha:código"
+    ou como um parâmetro separado 'code' para compatibilidade com o Swagger.
     """
-    result = await db.execute(select(User).where(User.email == mfa_data.username))
+    username = form_data.username
+    password_input = form_data.password
+    
+    # Verificar se o password contém o código MFA (formato: "senha:código")
+    password_parts = password_input.split(":", 1)
+    if len(password_parts) == 2:
+        password, mfa_code = password_parts
+    else:
+        password = password_input
+        mfa_code = code
+    
+    if not mfa_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Código MFA não fornecido. Use o formato 'senha:código' ou o parâmetro 'code'."
+        )
+    
+    # Buscar usuário
+    result = await db.execute(select(User).where(User.email == username))
     user = result.scalar_one_or_none()
     
-    if not user or not verify_password(mfa_data.password, user.hashed_password):
+    if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou senha incorretos"
@@ -141,7 +163,7 @@ async def login_mfa(
             detail="Usuário não tem MFA configurado. Use o endpoint /auth/login"
         )
     
-    if not verify_totp(mfa_data.code, user.mfa_secret):
+    if not verify_totp(mfa_code, user.mfa_secret):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Código MFA inválido"

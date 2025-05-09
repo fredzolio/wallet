@@ -87,6 +87,29 @@ async def custom_swagger_ui_html():
         oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css",
+        init_oauth={
+            "clientId": "",
+            "usePkceWithAuthorizationCodeGrant": True,
+        },
+        swagger_ui_parameters={
+            "docExpansion": "none",
+            "deepLinking": True,
+            "persistAuthorization": True,
+        },
+        custom_js="""
+        window.onload = function() {
+          // Adicionar instruções de MFA após o carregamento
+          setTimeout(function() {
+            const authBtn = document.getElementsByClassName("btn authorize")[0];
+            if (authBtn) {
+              const mfaHint = document.createElement("div");
+              mfaHint.innerHTML = "<small style='color:#999'>Para MFA: use o formato senha:código no campo Password</small>";
+              mfaHint.style.marginTop = "5px";
+              authBtn.parentNode.appendChild(mfaHint);
+            }
+          }, 1000);
+        };
+        """
     )
 
 @app.get("/redoc", include_in_schema=False)
@@ -116,6 +139,32 @@ def custom_openapi():
         description=app.description,
         routes=app.routes,
     )
+    
+    # Adicionar componente de segurança para MFA
+    if "components" not in openapi_schema:
+        openapi_schema["components"] = {}
+    
+    if "securitySchemes" not in openapi_schema["components"]:
+        openapi_schema["components"]["securitySchemes"] = {}
+    
+    # Adicionar esquema de segurança OAuth2 com MFA
+    openapi_schema["components"]["securitySchemes"]["OAuth2PasswordBearer"] = {
+        "type": "oauth2",
+        "flows": {
+            "password": {
+                "tokenUrl": f"{settings.API_V1_STR}/auth/login",
+                "scopes": {}
+            },
+            "implicit": {
+                "authorizationUrl": f"{settings.API_V1_STR}/auth/login-mfa",
+                "scopes": {}
+            }
+        },
+        "description": "Autenticação padrão ou com MFA. Use login-mfa para autenticação de dois fatores."
+    }
+    
+    # Aplicar segurança global
+    openapi_schema["security"] = [{"OAuth2PasswordBearer": []}]
     
     app.openapi_schema = openapi_schema
     return app.openapi_schema

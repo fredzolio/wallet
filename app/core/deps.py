@@ -1,5 +1,4 @@
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
@@ -9,9 +8,14 @@ from app.core.config import settings
 from app.core.security import decode_token
 from app.db.session import get_db
 from app.models.user import User
+from app.core.custom_oauth2 import OAuth2MfaBearer
 
 # OAuth2 scheme para extração do token do cabeçalho de autorização
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+oauth2_scheme = OAuth2MfaBearer(
+    tokenUrl=f"{settings.API_V1_STR}/auth/login",
+    scheme_name="OAuth2 com MFA",
+    description="Para MFA, use /auth/login-mfa e inclua o código no formato 'senha:código' ou parâmetro 'code'"
+)
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
