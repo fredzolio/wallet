@@ -24,6 +24,26 @@ pipeline {
                     docker --version
                     docker-compose --version
                 '''
+                
+                // Verificar existência de arquivos importantes
+                sh '''
+                    echo "Verificando arquivos de configuração..."
+                    if [ ! -f "alembic.ini" ]; then
+                        echo "ERRO: alembic.ini não encontrado!"
+                        if [ -f "alembic.ini.example" ]; then
+                            echo "Copiando alembic.ini.example para alembic.ini"
+                            cp alembic.ini.example alembic.ini
+                        else
+                            echo "Arquivo alembic.ini.example também não existe!"
+                            exit 1
+                        fi
+                    fi
+                    
+                    if [ ! -d "alembic" ]; then
+                        echo "ERRO: Diretório alembic não encontrado!"
+                        exit 1
+                    fi
+                '''
             }
         }
         
@@ -63,6 +83,10 @@ pipeline {
                     API_RUNNING=$(docker-compose -p ${DOCKER_COMPOSE_PROJECT} ps | grep api | grep "Up" | wc -l)
                     if [ $API_RUNNING -eq 0 ]; then
                         echo "ERRO: Container da API não está rodando!"
+                        echo "Verificando arquivos dentro do container:"
+                        docker-compose -p ${DOCKER_COMPOSE_PROJECT} exec -T db ls -la /var/lib/postgresql/data || true
+                        docker-compose -p ${DOCKER_COMPOSE_PROJECT} exec -T api ls -la /app || true
+                        docker-compose -p ${DOCKER_COMPOSE_PROJECT} exec -T api cat /app/alembic.ini || true
                         exit 1
                     fi
                 '''
