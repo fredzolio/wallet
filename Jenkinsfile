@@ -27,7 +27,7 @@ pipeline {
             }
         }
         
-        stage('Linting e Verificação de Código') {
+        stage('Linting e Testes') {
             steps {
                 sh '''
                     curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -38,14 +38,6 @@ pipeline {
                     . .venv/bin/activate
                     uv run ruff check .
                     uv run mypy app
-                '''
-            }
-        }
-        
-        stage('Testes') {
-            steps {
-                sh '''
-                    . .venv/bin/activate
                     uv run pytest app/tests -v
                 '''
             }

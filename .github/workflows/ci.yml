@@ -27,19 +27,23 @@ jobs:
       - name: Install dependencies
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
           uv add ruff mypy
           uv sync
       
       - name: Lint with ruff
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           uv run ruff check .
       
       - name: Type-check with mypy
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           uv run mypy app
       
       - name: Run tests
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           uv run pytest app/tests/ -v
           
   build-docker-image:
