@@ -101,12 +101,17 @@ def _parse_changelog_content(content: str) -> List[ChangelogEntry]:
         elif line.startswith("* ") and current_section:
             item = line[2:].strip()
             
+            # Remover o hash do commit que está no final entre parênteses, se existir
+            if " (" in item and item.endswith(")"):
+                item = item.rsplit(" (", 1)[0]
+            
             if current_section == "⚠ BREAKING CHANGES":
                 breaking_changes.append(item)
             elif "Deprecations" in current_section:
                 deprecations.append(item)
             else:
-                changes.append(f"{current_section}: {item}")
+                # O item já tem a descrição completa, não precisa adicionar a seção
+                changes.append(item)
     
     # Adicionar a última entrada
     if current_entry and (changes or breaking_changes or deprecations):
