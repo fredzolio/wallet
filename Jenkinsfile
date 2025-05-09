@@ -75,8 +75,8 @@ pipeline {
                     DUCKDNS_DOMAIN=$(grep DUCKDNS_DOMAIN .env | cut -d= -f2)
                     
                     # Substitui domínio nos arquivos de configuração
-                    sed -i "s/seudominio.duckdns.org/$DUCKDNS_DOMAIN/g" nginx/conf/app.conf
-                    sed -i "s/seudominio.duckdns.org/$DUCKDNS_DOMAIN/g" init-letsencrypt.sh
+                    sed -i "s/apiwallet.duckdns.org/$DUCKDNS_DOMAIN/g" nginx/conf/app.conf
+                    sed -i "s/apiwallet.duckdns.org/$DUCKDNS_DOMAIN/g" init-letsencrypt.sh
                     
                     # Configura e-mail para Let's Encrypt
                     EMAIL=$(grep ACME_EMAIL .env | cut -d= -f2)
