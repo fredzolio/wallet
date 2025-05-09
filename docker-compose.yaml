@@ -47,10 +47,10 @@ services:
       - "5050:80"
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.letta_server.rule=Host(`walletapi.duckdns.org`)'
-      - 'traefik.http.routers.letta_server.entrypoints=websecure'
-      - 'traefik.http.routers.letta_server.tls.certresolver=myresolver'
-      - 'traefik.http.services.letta_server.loadbalancer.server.port=5050'
+      - 'traefik.http.routers.pgadmin.rule=Host(`walletapi.duckdns.org`)'
+      - 'traefik.http.routers.pgadmin.entrypoints=websecure'
+      - 'traefik.http.routers.pgadmin.tls.certresolver=myresolver'
+      - 'traefik.http.services.pgadmin.loadbalancer.server.port=5050'
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
@@ -69,10 +69,10 @@ services:
       - "8088:8080"
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.letta_server.rule=Host(`walletapi.duckdns.org`)'
-      - 'traefik.http.routers.letta_server.entrypoints=websecure'
-      - 'traefik.http.routers.letta_server.tls.certresolver=myresolver'
-      - 'traefik.http.services.letta_server.loadbalancer.server.port=8088'
+      - 'traefik.http.routers.keycloak.rule=Host(`walletapi.duckdns.org`)'
+      - 'traefik.http.routers.keycloak.entrypoints=websecure'
+      - 'traefik.http.routers.keycloak.tls.certresolver=myresolver'
+      - 'traefik.http.services.keycloak.loadbalancer.server.port=8088'
     command: ["start-dev", "--health-enabled=true"]
     networks:
       - vizo_network
@@ -94,10 +94,10 @@ services:
       - vizo_network
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.letta_server.rule=Host(`walletapi.duckdns.org`)'
-      - 'traefik.http.routers.letta_server.entrypoints=websecure'
-      - 'traefik.http.routers.letta_server.tls.certresolver=myresolver'
-      - 'traefik.http.services.letta_server.loadbalancer.server.port=9090'
+      - 'traefik.http.routers.prometheus.rule=Host(`walletapi.duckdns.org`)'
+      - 'traefik.http.routers.prometheus.entrypoints=websecure'
+      - 'traefik.http.routers.prometheus.tls.certresolver=myresolver'
+      - 'traefik.http.services.prometheus.loadbalancer.server.port=9090'
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -119,10 +119,10 @@ services:
     restart: unless-stopped
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.letta_server.rule=Host(`walletapi.duckdns.org`)'
-      - 'traefik.http.routers.letta_server.entrypoints=websecure'
-      - 'traefik.http.routers.letta_server.tls.certresolver=myresolver'
-      - 'traefik.http.services.letta_server.loadbalancer.server.port=3001'
+      - 'traefik.http.routers.grafana.rule=Host(`walletapi.duckdns.org`)'
+      - 'traefik.http.routers.grafana.entrypoints=websecure'
+      - 'traefik.http.routers.grafana.tls.certresolver=myresolver'
+      - 'traefik.http.services.grafana.loadbalancer.server.port=3001'
     networks:
       - vizo_network
     ports:
@@ -169,10 +169,10 @@ services:
       - vizo_network
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.letta_server.rule=Host(`walletapi.duckdns.org`)'
-      - 'traefik.http.routers.letta_server.entrypoints=websecure'
-      - 'traefik.http.routers.letta_server.tls.certresolver=myresolver'
-      - 'traefik.http.services.letta_server.loadbalancer.server.port=8000'
+      - 'traefik.http.routers.walletapi.rule=Host(`walletapi.duckdns.org`)'
+      - 'traefik.http.routers.walletapi.entrypoints=websecure'
+      - 'traefik.http.routers.walletapi.tls.certresolver=myresolver'
+      - 'traefik.http.services.walletapi.loadbalancer.server.port=8000'
     volumes:
       - ./app:/app/app
       - ./alembic:/app/alembic
