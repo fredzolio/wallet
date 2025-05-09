@@ -87,15 +87,6 @@ async def custom_swagger_ui_html():
         oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css",
-        init_oauth={
-            "clientId": "",
-            "usePkceWithAuthorizationCodeGrant": True,
-        },
-        swagger_ui_parameters={
-            "docExpansion": "none",
-            "deepLinking": True,
-            "persistAuthorization": True,
-        },
     )
 
 @app.get("/redoc", include_in_schema=False)
@@ -125,40 +116,6 @@ def custom_openapi():
         description=app.description,
         routes=app.routes,
     )
-    
-    # Adicionar componente de segurança para MFA
-    if "components" not in openapi_schema:
-        openapi_schema["components"] = {}
-    
-    if "securitySchemes" not in openapi_schema["components"]:
-        openapi_schema["components"]["securitySchemes"] = {}
-    
-    # Define o esquema para login normal
-    openapi_schema["components"]["securitySchemes"]["LoginNormal"] = {
-        "type": "oauth2",
-        "flows": {
-            "password": {
-                "tokenUrl": f"{settings.API_V1_STR}/auth/login",
-                "scopes": {}
-            }
-        },
-        "description": "Login padrão sem MFA. Use seu email e senha normalmente."
-    }
-    
-    # Define o esquema para login com MFA
-    openapi_schema["components"]["securitySchemes"]["LoginMFA"] = {
-        "type": "oauth2",
-        "flows": {
-            "password": {
-                "tokenUrl": f"{settings.API_V1_STR}/auth/login-mfa",
-                "scopes": {}
-            }
-        },
-        "description": "Login com autenticação de dois fatores (MFA). Use o formato 'senha:código' no campo password ou forneça o parâmetro 'code'."
-    }
-    
-    # Aplicar segurança global (ambas as opções)
-    openapi_schema["security"] = [{"LoginNormal": []}, {"LoginMFA": []}]
     
     app.openapi_schema = openapi_schema
     return app.openapi_schema

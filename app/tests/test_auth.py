@@ -36,6 +36,4 @@ async def test_protected_endpoint_without_token(async_client: AsyncClient) -> No
     response = await async_client.get("/api/v1/documents")
     
     assert response.status_code == 401
-    error_detail = response.json()["detail"].lower()
-    # Verifica se a mensagem está em inglês ou português
-    assert "not authenticated" in error_detail or "não autenticado" in error_detail
+    assert "not authenticated" in response.json()["detail"].lower()
