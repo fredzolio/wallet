@@ -5,6 +5,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - vizo_network
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -16,6 +18,8 @@ services:
   redis:
     image: redis:7
     command: ["redis-server", "--appendonly", "yes"]
+    networks:
+      - vizo_network
     volumes:
       - redis_data:/data
     ports: ["6379:6379"]
@@ -28,8 +32,16 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    networks:
+      - vizo_network
     ports:
-      - "5050:80"   # acessar em http://localhost:5050
+      - "5050:80"
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.letta_server.rule=Host(`walletapi.duckdns.org`)'
+      - 'traefik.http.routers.letta_server.entrypoints=websecure'
+      - 'traefik.http.routers.letta_server.tls.certresolver=myresolver'
+      - 'traefik.http.services.letta_server.loadbalancer.server.port=5050'
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
@@ -46,7 +58,15 @@ services:
       KC_FEATURES: ${KC_FEATURES}
     ports:
       - "8088:8080"
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.letta_server.rule=Host(`walletapi.duckdns.org`)'
+      - 'traefik.http.routers.letta_server.entrypoints=websecure'
+      - 'traefik.http.routers.letta_server.tls.certresolver=myresolver'
+      - 'traefik.http.services.letta_server.loadbalancer.server.port=8088'
     command: ["start-dev", "--health-enabled=true"]
+    networks:
+      - vizo_network
     depends_on:
       db: { condition: service_healthy }
     volumes:
@@ -61,6 +81,14 @@ services:
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
+    networks:
+      - vizo_network
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.letta_server.rule=Host(`walletapi.duckdns.org`)'
+      - 'traefik.http.routers.letta_server.entrypoints=websecure'
+      - 'traefik.http.routers.letta_server.tls.certresolver=myresolver'
+      - 'traefik.http.services.letta_server.loadbalancer.server.port=9090'
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -80,6 +108,14 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=${GF_USERS_ALLOW_SIGN_UP}
     restart: unless-stopped
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.letta_server.rule=Host(`walletapi.duckdns.org`)'
+      - 'traefik.http.routers.letta_server.entrypoints=websecure'
+      - 'traefik.http.routers.letta_server.tls.certresolver=myresolver'
+      - 'traefik.http.services.letta_server.loadbalancer.server.port=3001'
+    networks:
+      - vizo_network
     ports:
       - "3001:3000"
     depends_on:
@@ -120,6 +156,14 @@ services:
       PROJECT_NAME: ${PROJECT_NAME}
       CORS_ORIGINS: ${CORS_ORIGINS}
     ports: ["8000:8000"]
+    networks:
+      - vizo_network
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.letta_server.rule=Host(`walletapi.duckdns.org`)'
+      - 'traefik.http.routers.letta_server.entrypoints=websecure'
+      - 'traefik.http.routers.letta_server.tls.certresolver=myresolver'
+      - 'traefik.http.services.letta_server.loadbalancer.server.port=8000'
     volumes:
       - ./app:/app/app
       - ./alembic:/app/alembic
@@ -139,3 +183,7 @@ volumes:
   keycloak_data:
   prometheus_data:
   grafana_data:
+
+networks:
+  vizo_network:
+    external: true
