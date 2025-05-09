@@ -53,6 +53,9 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
     restart: unless-stopped
+    networks:
+      - monitoring-network
+      - default
 
   grafana:
     image: grafana/grafana:10.3.3
@@ -63,11 +66,15 @@ services:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=${GF_USERS_ALLOW_SIGN_UP}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel
     restart: unless-stopped
     ports:
       - "3001:3000"
     depends_on:
       - prometheus
+    networks:
+      - monitoring-network
+      - default
 
   api:
     build: .
@@ -106,6 +113,13 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+    networks:
+      - default
+      - monitoring-network
+
+networks:
+  monitoring-network:
+    driver: bridge
 
 volumes:
   db_data:
