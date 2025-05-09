@@ -34,10 +34,13 @@ pipeline {
         stage('Configurar ambiente') {
             steps {
                 sh '''
-                    cp "${ENV_FILE}" .env
+                    rm -rf .env                    # <-- NOVO
+                    cp "${ENV_FILE}" .env          # secret → workspace
+                    chmod 600 .env                 # opcional
+
                     docker compose version
                     [ -f alembic.ini ] || cp alembic.ini.example alembic.ini
-                    [ -d alembic ] || { echo "Diretório alembic inexistente"; exit 1; }
+                    [ -d alembic ]   || { echo "Diretório alembic inexistente"; exit 1; }
                 '''
             }
         }
