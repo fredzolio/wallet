@@ -92,15 +92,6 @@ pipeline {
                 '''
             }
         }
-        
-        stage('Executar Migrations') {
-            steps {
-                sh '''
-                    # Executar migrations no banco de dados
-                    docker-compose -p ${DOCKER_COMPOSE_PROJECT} exec -T api alembic upgrade head
-                '''
-            }
-        }
     }
     
     post {
