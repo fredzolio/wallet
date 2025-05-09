@@ -39,18 +39,25 @@ dependencies = [
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 
+[tool.semantic_release]
+version_variable = "app/__init__.py:__version__"
+branch = "main"
+commit_version_number = true
+commit_message = "chore(release): {version} [skip ci]"
+tag_format = "v{version}"
+
 [tool.semantic_release.commit_parser_options]
 allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"]
 minor_tags = ["feat"]
 patch_tags = ["fix", "perf"]
 
-[tool.semantic_release.changelog]
+[tool.semantic_release.default_templates.changelog_file]
 template_dir = "templates"
 changelog_file = "CHANGELOG.md"
 exclude_commit_patterns = [
-    "^chore\\(.*\\): .*$",
-    "^ci\\(.*\\): .*$",
-    "^test\\(.*\\): .*$",
-    "^style\\(.*\\): .*$",
-    "^build\\((?!deps).*\\): .*$"
+    "^chore\\(release\\): .*$",
+    "^chore\\(deps\\): .*$",
+    "^ci: .*$",
+    "^test: .*$",
+    "^style: .*$"
 ]

@@ -41,6 +41,10 @@ def _get_api_version() -> str:
             with open(VERSION_FILE, "r") as f:
                 version_info = json.load(f)
                 return version_info.get("version", "1.0.0")
+        
+        # Se não existir arquivo version.json, tentar obter da variável __version__
+        import app
+        return getattr(app, "__version__", "1.0.0")
     except Exception as e:
         logger.error(f"Erro ao obter versão da API: {str(e)}")
     
@@ -61,10 +65,16 @@ def _generate_changelog_with_semantic_release() -> bool:
             return False
             
         # Gerar changelog
-        subprocess.run(
-            ["semantic-release", "changelog"],
-            check=True
-        )
+        try:
+            subprocess.run(
+                ["semantic-release", "changelog"],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Erro ao executar semantic-release changelog: {e.stderr}")
+            return False
         
         return os.path.exists(CHANGELOG_FILE)
     except Exception as e:
@@ -86,64 +96,63 @@ def _parse_changelog_content() -> List[ChangelogEntry]:
     entries = []
     
     try:
+        # Garantir que o arquivo CHANGELOG.md existe
         if not os.path.exists(CHANGELOG_FILE):
             # Tentar gerar o changelog primeiro com semantic-release
             if not _generate_changelog_with_semantic_release():
                 # Se falhar, usar GitAnalyzer como fallback
                 _generate_changelog_with_git_analyzer()
             
-            if not os.path.exists(CHANGELOG_FILE):
-                # Se ainda não existir, retornar lista vazia
-                return []
-        
-        with open(CHANGELOG_FILE, "r") as f:
-            content = f.read()
+        # Ler o changelog se ele existir
+        if os.path.exists(CHANGELOG_FILE):
+            with open(CHANGELOG_FILE, "r") as f:
+                content = f.read()
+                
+            # Processar conteúdo do changelog
+            sections = content.split("## ")
             
-        # Processar conteúdo do changelog
-        sections = content.split("## ")
-        
-        for section in sections[1:]:  # Ignorar o cabeçalho
-            lines = section.strip().split("\n")
-            header = lines[0].strip()
-            
-            # Extrair versão e data
-            import re
-            match = re.match(r"([^\s]+)\s+\(([^)]+)\)", header)
-            
-            if match:
-                version = match.group(1)
-                date = match.group(2)
+            for section in sections[1:]:  # Ignorar o cabeçalho
+                lines = section.strip().split("\n")
+                header = lines[0].strip()
                 
-                # Processar categorias
-                changes = []
-                deprecations = []
-                breaking_changes = []
+                # Extrair versão e data
+                import re
+                match = re.match(r"([^\s]+)\s+\(([^)]+)\)", header)
                 
-                current_category = None
-                
-                for line in lines[1:]:
-                    if line.startswith("### "):
-                        current_category = line[4:].strip()
-                    elif line.startswith("* "):
-                        item = line[2:].strip()
-                        
-                        if current_category == "BREAKING CHANGES" or current_category == "⚠ BREAKING CHANGES":
-                            breaking_changes.append(item)
-                        elif current_category == "Deprecations":
-                            deprecations.append(item)
-                        elif current_category:
-                            changes.append(f"{current_category}: {item}")
-                
-                # Criar entrada do changelog
-                entry = ChangelogEntry(
-                    version=version,
-                    date=date,
-                    changes=changes,
-                    deprecations=deprecations if deprecations else None,
-                    breaking_changes=breaking_changes if breaking_changes else None
-                )
-                
-                entries.append(entry)
+                if match:
+                    version = match.group(1)
+                    date = match.group(2)
+                    
+                    # Processar categorias
+                    changes = []
+                    deprecations = []
+                    breaking_changes = []
+                    
+                    current_category = None
+                    
+                    for line in lines[1:]:
+                        if line.startswith("### "):
+                            current_category = line[4:].strip()
+                        elif line.startswith("* "):
+                            item = line[2:].strip()
+                            
+                            if current_category in ["BREAKING CHANGES", "⚠ BREAKING CHANGES"]:
+                                breaking_changes.append(item)
+                            elif current_category == "Deprecations":
+                                deprecations.append(item)
+                            elif current_category:
+                                changes.append(f"{current_category}: {item}")
+                    
+                    # Criar entrada do changelog
+                    entry = ChangelogEntry(
+                        version=version,
+                        date=date,
+                        changes=changes,
+                        deprecations=deprecations if deprecations else None,
+                        breaking_changes=breaking_changes if breaking_changes else None
+                    )
+                    
+                    entries.append(entry)
     except Exception as e:
         logger.error(f"Erro ao analisar changelog: {str(e)}")
     
@@ -152,15 +161,14 @@ def _parse_changelog_content() -> List[ChangelogEntry]:
         entries = [
             ChangelogEntry(
                 version="1.0.0",
-                date="2024-06-01",
+                date="2024-06-10",
                 changes=[
-                    "Versão inicial da API",
-                    "Implementação de autenticação com JWT",
-                    "Implementação de OAuth2 com Google",
-                    "Autenticação de dois fatores (MFA)",
-                    "Endpoints para documentos digitais",
-                    "Endpoints para cartão de transporte",
-                    "Simulação de chatbot"
+                    "Features: Versão inicial da API",
+                    "Features: Implementação de autenticação com JWT",
+                    "Features: Implementação de OAuth2 com Google",
+                    "Features: Autenticação de dois fatores (MFA)",
+                    "Features: Endpoints para documentos digitais",
+                    "Features: Endpoints para cartão de transporte"
                 ]
             )
         ]
