@@ -41,6 +41,7 @@ dependencies = [
   "types-aiofiles>=24.1.0.20250326",
   "types-markdown>=3.8.0.20250415",
   "types-authlib>=1.5.0.20250416",
+  "tasks>=2.8.0",
 ]
 
 [tool.pytest.ini_options]
@@ -48,3 +49,8 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
 exclude = ["app/db/base.py"]
+
+[tool.tasks]
+changelog = "python -m app.utils.git_analyzer"
+
+
