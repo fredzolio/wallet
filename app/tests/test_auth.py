@@ -173,14 +173,6 @@ async def test_mfa_setup(async_client: AsyncClient, user_token_headers: Dict[str
 @pytest.mark.skip(reason="Temporariamente desabilitado devido a problemas de CI/ambiente de teste (Assert 401 == 200).")
 async def test_mfa_verify_success(async_client: AsyncClient, user_token_headers: Dict[str, str]) -> None:
     """Testa verificação do código MFA com sucesso."""
-    # Configura MFA primeiro
-    setup_response = await async_client.post(
-        "/api/v1/auth/mfa/setup",
-        headers=user_token_headers
-    )
-    
-    mfa_secret = setup_response.json()["mfa_secret"]
-    
     # Patch para simular código TOTP válido
     with patch("app.core.security.verify_totp", return_value=True):
         response = await async_client.post(
@@ -363,7 +355,7 @@ async def test_keycloak_login(async_client: AsyncClient, mock_settings_keycloak_
 
 async def test_keycloak_refresh(async_client: AsyncClient, mock_settings_keycloak_enabled) -> None:
     """Testa refresh de token via Keycloak."""
-    with patch("httpx.AsyncClient.post") as mock_post:
+    with patch("httpx.AsyncClient.post"):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {

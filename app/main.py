@@ -18,14 +18,15 @@ from app.db.init_db import init_db
 from app.db.session import AsyncSessionLocal
 from app.db.migrations import run_migrations
 
-# Configurar logger
-logger = logging.getLogger(__name__)
-
-# Configuração do rate limiter
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+
+# Configurar logger
+logger = logging.getLogger(__name__)
+
+# Configuração do rate limiter
 
 limiter = Limiter(key_func=get_remote_address)
 
