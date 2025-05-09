@@ -5,20 +5,12 @@ pipeline {
         PYTHON_VERSION = '3.13'
         DOCKER_COMPOSE_PROJECT = 'wallet'
         ENV_FILE = credentials('wallet-env-file')
-        BUILD_SUCCESS = 'false'
     }
     
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
-            }
-        }
-        
-        stage('Corrigir Permissões') {
-            steps {
-                sh 'find ${WORKSPACE} -type d -exec chmod 755 {} \\; || true'
-                sh 'find ${WORKSPACE} -type f -exec chmod 644 {} \\; || true'
             }
         }
         
@@ -104,39 +96,31 @@ pipeline {
                         exit 1
                     fi
                 '''
-                
-                // Marcar que a build foi bem-sucedida
-                script {
-                    env.BUILD_SUCCESS = 'true'
-                }
-            }
-        }
-        
-        stage('Finalização') {
-            steps {
-                script {
-                    if (env.BUILD_SUCCESS == 'true') {
-                        echo "Pipeline executado com sucesso! Aplicações rodando em Docker."
-                    } else {
-                        echo "Pipeline falhou. Verificando logs para diagnóstico."
-                        sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} logs api || true'
-                        sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} down || true'
-                    }
-                    
-                    // Limpar permissões e corrigir arquivos antes de limpar
-                    sh 'find ${WORKSPACE} -type d -exec chmod 755 {} \\; || true'
-                    sh 'find ${WORKSPACE} -type f -exec chmod 644 {} \\; || true'
-                    
-                    echo "Aplicações continuam rodando em http://localhost:8000"
-                    // Opção alternativa: Desligar aplicações (descomente se preferir parar)
-                    // sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} down'
-                }
             }
         }
     }
     
     post {
-        always {
+        success {
+            echo "Pipeline executado com sucesso! Aplicações rodando em Docker."
+        }
+        failure {
+            echo "Pipeline falhou. Verifique os logs para mais detalhes."
+            
+            // Capturar logs da API em caso de falha
+            sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} logs api || true'
+            
+            // Em caso de falha, tenta parar os containers
+            sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} down || true'
+        }
+        cleanup {
+            // Opção 1: Manter aplicações rodando
+            echo "Aplicações continuam rodando em http://localhost:8000"
+            
+            // Opção 2: Desligar aplicações (descomente se preferir parar)
+            // sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} down'
+            
+            // Limpar workspace
             cleanWs()
         }
     }
