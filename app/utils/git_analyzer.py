@@ -222,7 +222,9 @@ class GitAnalyzer:
         Returns:
             Conteúdo do changelog gerado
         """
+        logger.info("Iniciando geração do changelog")
         tags = self.get_tags()
+        logger.info(f"Tags encontradas: {tags}")
         
         # Adicionar HEAD como tag mais recente para commits não lançados
         tags = ["HEAD"] + tags if tags else ["HEAD"]
@@ -233,12 +235,15 @@ class GitAnalyzer:
         for i, current_tag in enumerate(tags):
             # Pular a última tag, pois não há "antes" dela
             if i >= len(tags) - 1:
+                logger.info(f"Pulando última tag: {current_tag}")
                 continue
                 
             next_tag = tags[i + 1]
+            logger.info(f"Processando commits entre {next_tag} e {current_tag}")
             
             # Se for HEAD e não houver commits, pular
             if current_tag == "HEAD" and not self._run_git_command(["log", "-1", "--oneline"]):
+                logger.info("Sem commits para HEAD, pulando")
                 continue
                 
             # Título da versão
@@ -255,6 +260,7 @@ class GitAnalyzer:
             
             # Obter commits entre tags
             commits = self.get_commits_between_tags(next_tag, current_tag)
+            logger.info(f"Encontrados {len(commits)} commits entre {next_tag} e {current_tag}")
             
             # Classificar commits por tipo
             commit_types = {
@@ -276,6 +282,7 @@ class GitAnalyzer:
             
             for commit in commits:
                 commit_type = commit["type"]
+                logger.debug(f"Processando commit do tipo {commit_type}: {commit['description']}")
                 
                 # Se é um tipo conhecido, adicionar à categoria
                 if commit_type in commit_types:
@@ -289,6 +296,7 @@ class GitAnalyzer:
             
             # Adicionar breaking changes primeiro
             if breaking_changes:
+                logger.info(f"Adicionando {len(breaking_changes)} breaking changes")
                 changelog += "### ⚠ BREAKING CHANGES\n\n"
                 for commit in breaking_changes:
                     scope_txt = f"**{commit['scope']}:** " if commit["scope"] else ""
@@ -300,6 +308,7 @@ class GitAnalyzer:
                 if not type_data["commits"]:
                     continue
                     
+                logger.info(f"Adicionando {len(type_data['commits'])} commits do tipo {type_key}")
                 changelog += f"### {type_data['title']}\n\n"
                 
                 for commit in type_data["commits"]:
@@ -310,11 +319,42 @@ class GitAnalyzer:
                 
         # Salvar changelog se especificado
         if output_path:
+            logger.info(f"Salvando changelog em {output_path}")
             os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write(changelog)
                 
         return changelog
+    
+    def update_changelog(self, output_path: str = "CHANGELOG.md") -> str:
+        """
+        Atualiza o arquivo de changelog existente ou cria um novo baseado no histórico Git.
+        
+        Args:
+            output_path: Caminho do arquivo de changelog
+            
+        Returns:
+            Conteúdo do changelog atualizado
+        """
+        # Verificar se o arquivo existe e tem conteúdo
+        try:
+            logger.info(f"Iniciando atualização do changelog em: {output_path}")
+            commits = self.get_commits_between_tags()
+            logger.info(f"Encontrados {len(commits)} commits para processar")
+            
+            # Exibir os primeiros commits para depuração
+            for i, commit in enumerate(commits[:5]):
+                logger.info(f"Commit {i+1}: {commit['type']} - {commit['description']}")
+            
+            # Simplesmente gerar um novo changelog completo
+            # Esta abordagem é mais simples e garante que todos os commits sejam incluídos
+            logger.info(f"Gerando novo arquivo de changelog: {output_path}")
+            return self.generate_changelog(output_path)
+                
+        except Exception as e:
+            logger.error(f"Erro ao atualizar changelog: {e}")
+            # Em caso de erro, gerar um novo changelog
+            return self.generate_changelog(output_path)
     
     def get_api_version_from_tags(self) -> str:
         """
@@ -394,5 +434,5 @@ class GitAnalyzer:
 
 if __name__ == "__main__":
     analyzer = GitAnalyzer()
-    analyzer.generate_changelog()
+    analyzer.update_changelog()
     analyzer.save_version_info() 

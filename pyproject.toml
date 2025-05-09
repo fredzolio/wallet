@@ -33,28 +33,8 @@ dependencies = [
   "fakeredis[aioredis]>=2.21",
   "aiosqlite>=0.21.0",
   "google-genai>=1.11.0",
-  "python-semantic-release>=9.21.1",
+  "markdown>=3.5.2",
 ]
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
-
-[tool.semantic_release]
-version_variable = "app/__init__.py:__version__"
-branch = "main"
-commit_version_number = true
-commit_message = "chore(release): {version} [skip ci]"
-tag_format = "v{version}"
-
-[tool.semantic_release.commit_parser_options]
-allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"]
-minor_tags = ["feat"]
-patch_tags = ["fix", "perf", "refactor"]
-additional_tagging = {chore = "patch", docs = "patch", style = "patch", test = "patch", ci = "patch"}
-
-[tool.semantic_release.changelog]
-template_dir = "templates"
-
-[tool.semantic_release.changelog.default_templates]
-changelog_file = "CHANGELOG.md"
-exclude_commit_patterns = []
