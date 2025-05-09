@@ -95,21 +95,11 @@ async def custom_swagger_ui_html():
             "docExpansion": "none",
             "deepLinking": True,
             "persistAuthorization": True,
+            "displayOperationId": False,
+            "syntaxHighlight": {"theme": "obsidian"},
+            "defaultModelsExpandDepth": 3,
+            "defaultModelExpandDepth": 3,
         },
-        custom_js="""
-        window.onload = function() {
-          // Adicionar instruções de MFA após o carregamento
-          setTimeout(function() {
-            const authBtn = document.getElementsByClassName("btn authorize")[0];
-            if (authBtn) {
-              const mfaHint = document.createElement("div");
-              mfaHint.innerHTML = "<small style='color:#999'>Para MFA: use o formato senha:código no campo Password</small>";
-              mfaHint.style.marginTop = "5px";
-              authBtn.parentNode.appendChild(mfaHint);
-            }
-          }, 1000);
-        };
-        """
     )
 
 @app.get("/redoc", include_in_schema=False)

@@ -59,4 +59,5 @@ ruff = "ruff check ."
 ruff-fix = "ruff check --fix ."
 tests = "uv run pytest app/tests/ -v"
 mypy = "uv run mypy app"
+check = "task ruff-fix && task mypy && task tests"
 
