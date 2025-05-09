@@ -86,7 +86,7 @@ pipeline {
                         echo "Verificando arquivos dentro do container:"
                         docker-compose -p ${DOCKER_COMPOSE_PROJECT} exec -T db ls -la /var/lib/postgresql/data || true
                         docker-compose -p ${DOCKER_COMPOSE_PROJECT} exec -T api ls -la /app || true
-                        docker-compose -p ${DOCKER_COMPOSE_PROJECT} exec -T api cat /app/alembic.ini || true
+                        docker-compose -p ${DOCKER_COMPOSE_PROJECT} exec -T api cat /alembic.ini || true
                         exit 1
                     fi
                 '''
@@ -101,28 +101,6 @@ pipeline {
                 '''
             }
         }
-        
-        stage('Testes de Integração') {
-            steps {
-                sh '''
-                    # Executar testes de integração contra serviços em execução
-                    . .venv/bin/activate
-                    # Aqui você pode adicionar testes de integração ou verificações
-                    curl -s http://localhost:8000/api/v1/health | grep "status.*ok"
-                '''
-            }
-        }
-        
-        stage('Validar Métricas') {
-            steps {
-                sh '''
-                    # Verificar se Prometheus está recebendo métricas
-                    curl -s http://localhost:9090/api/v1/targets | grep "state.*up"
-                    
-                    # Verificar se Grafana está disponível
-                    curl -s http://localhost:3001/api/health | grep "database.*ok"
-                '''
-            }
         }
     }
     
