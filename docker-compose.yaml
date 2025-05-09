@@ -45,13 +45,6 @@ services:
       - vizo_network
     ports:
       - "5050:80"
-    labels:
-      - 'traefik.enable=true'
-      - 'traefik.http.routers.pgadmin.rule=Host(`walletapi.duckdns.org`) && PathPrefix(`/pgadmin`)'
-      - 'traefik.http.routers.pgadmin.entrypoints=websecure'
-      - 'traefik.http.routers.pgadmin.tls.certresolver=myresolver'
-      - 'traefik.http.services.pgadmin.loadbalancer.server.port=80'
-      - 'traefik.http.routers.pgadmin.priority=20'
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
@@ -71,14 +64,6 @@ services:
       KC_PROXY: edge
     ports:
       - "8088:8080"
-    labels:
-      - 'traefik.enable=true'
-      - 'traefik.http.routers.keycloak.rule=Host(`walletapi.duckdns.org`) && PathPrefix(`/auth`)'
-      - 'traefik.http.routers.keycloak.entrypoints=websecure'
-      - 'traefik.http.routers.keycloak.tls.certresolver=myresolver'
-      # Removido o stripprefix que causa problemas
-      - 'traefik.http.services.keycloak.loadbalancer.server.port=8080'
-      - 'traefik.http.routers.keycloak.priority=20'
     command: ["start-dev", "--hostname-path=/auth", "--proxy=edge", "--health-enabled=true"]
     networks:
       - vizo_network
@@ -98,16 +83,6 @@ services:
       - "9090:9090"
     networks:
       - vizo_network
-    labels:
-      - 'traefik.enable=true'
-      - 'traefik.http.routers.prometheus.rule=Host(`walletapi.duckdns.org`) && PathPrefix(`/prometheus`)'
-      - 'traefik.http.routers.prometheus.entrypoints=websecure'
-      - 'traefik.http.routers.prometheus.tls.certresolver=myresolver'
-      - 'traefik.http.middlewares.prometheus-prefix.replacepathregex.regex=^/prometheus/(.*)'
-      - 'traefik.http.middlewares.prometheus-prefix.replacepathregex.replacement=/$$1'
-      - 'traefik.http.routers.prometheus.middlewares=prometheus-prefix@docker'
-      - 'traefik.http.services.prometheus.loadbalancer.server.port=9090'
-      - 'traefik.http.routers.prometheus.priority=20'
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -130,13 +105,6 @@ services:
       - GF_SERVER_ROOT_URL=https://walletapi.duckdns.org/grafana
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     restart: unless-stopped
-    labels:
-      - 'traefik.enable=true'
-      - 'traefik.http.routers.grafana.rule=Host(`walletapi.duckdns.org`) && PathPrefix(`/grafana`)'
-      - 'traefik.http.routers.grafana.entrypoints=websecure'
-      - 'traefik.http.routers.grafana.tls.certresolver=myresolver'
-      - 'traefik.http.services.grafana.loadbalancer.server.port=3000'
-      - 'traefik.http.routers.grafana.priority=20'
     networks:
       - vizo_network
     ports:
@@ -181,16 +149,6 @@ services:
     ports: ["8000:8000"]
     networks:
       - vizo_network
-    labels:
-      - 'traefik.enable=true'
-      # Configuração do serviço API 
-      - 'traefik.http.services.walletapi.loadbalancer.server.port=8000'
-      # Rota para a API na raiz do domínio
-      - 'traefik.http.routers.walletapi-root.rule=Host(`walletapi.duckdns.org`)'
-      - 'traefik.http.routers.walletapi-root.entrypoints=websecure'
-      - 'traefik.http.routers.walletapi-root.tls.certresolver=myresolver'
-      - 'traefik.http.routers.walletapi-root.service=walletapi'
-      - 'traefik.http.routers.walletapi-root.priority=10'
     volumes:
       - ./app:/app/app
       - ./alembic:/app/alembic
