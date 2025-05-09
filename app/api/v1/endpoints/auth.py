@@ -4,7 +4,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import secrets
 from starlette.responses import RedirectResponse
-from httpx import AsyncClient
 import uuid
 
 from app.core.security import (
