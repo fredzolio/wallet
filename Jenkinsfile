@@ -50,10 +50,22 @@ pipeline {
                 sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} up -d'
                 
                 // Esperar aplicações inicializarem
-                sh 'sleep 30'
+                sh 'sleep 10'
                 
                 // Verificar estado dos containers
                 sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} ps'
+                
+                // Verificar logs da API para diagnosticar problemas
+                sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} logs api'
+                
+                // Verificar se o container da API está rodando
+                sh '''
+                    API_RUNNING=$(docker-compose -p ${DOCKER_COMPOSE_PROJECT} ps | grep api | grep "Up" | wc -l)
+                    if [ $API_RUNNING -eq 0 ]; then
+                        echo "ERRO: Container da API não está rodando!"
+                        exit 1
+                    fi
+                '''
             }
         }
         
@@ -96,6 +108,9 @@ pipeline {
         }
         failure {
             echo "Pipeline falhou. Verifique os logs para mais detalhes."
+            
+            // Capturar logs da API em caso de falha
+            sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} logs api || true'
             
             // Em caso de falha, tenta parar os containers
             sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} down || true'
