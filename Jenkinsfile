@@ -1,61 +1,59 @@
+// Jenkinsfile (versão corrigida)
 pipeline {
     agent any
-    
-    environment {
-        PYTHON_VERSION = '3.13'
-        DOCKER_COMPOSE_PROJECT = 'wallet'
-        ENV_FILE = credentials('wallet-env-file')
+
+    /* -------------- Ferramentas ---------------- */
+    tools {
+        // Em: Manage Jenkins → Global Tool Configuration → Git
+        git 'Default'
     }
-    
+
+    /* -------------- Variáveis de ambiente ------ */
+    environment {
+        PYTHON_VERSION          = '3.13'
+        DOCKER_COMPOSE_PROJECT  = 'wallet'
+        ENV_FILE                = credentials('wallet-env-file')   // secret file
+        JENKINS_UID             = '115'   // uid do processo Jenkins (ps -o uid)
+        JENKINS_GID             = '121'   // gid do processo Jenkins (ps -o gid)
+    }
+
+    /* -------------- Opções do pipeline --------- */
+    options {
+        // Começa SEMPRE com workspace vazio (evita arquivos órfãos)
+        skipDefaultCheckout()
+        disableConcurrentBuilds()
+    }
+
+    /* -------------- Stages --------------------- */
     stages {
-        stage('Checkout') {
+
+        stage('Prep workspace') {
             steps {
+                deleteDir()          // limpa RESTOS antes do checkout
                 checkout scm
             }
         }
-        
-        stage('Prune') {
-          steps {
-            sh 'docker system prune -f'
-          }
-        }
 
-        stage('Configurar Ambiente') {
+        stage('Configurar ambiente') {
             steps {
-                // Copiar arquivo de env para execução local
-                sh 'cp ${ENV_FILE} .env'
-                
-                // Verificar ferramentas instaladas
-                sh '''
+                sh """
+                    cp \"${ENV_FILE}\" .env
+
+                    echo 'Versões:'
                     docker --version
-                    docker-compose --version
-                '''
-                
-                // Verificar existência de arquivos importantes
-                sh '''
-                    echo "Verificando arquivos de configuração..."
-                    if [ ! -f "alembic.ini" ]; then
-                        echo "ERRO: alembic.ini não encontrado!"
-                        if [ -f "alembic.ini.example" ]; then
-                            echo "Copiando alembic.ini.example para alembic.ini"
-                            cp alembic.ini.example alembic.ini
-                        else
-                            echo "Arquivo alembic.ini.example também não existe!"
-                            exit 1
-                        fi
-                    fi
-                    
-                    if [ ! -d "alembic" ]; then
-                        echo "ERRO: Diretório alembic não encontrado!"
-                        exit 1
-                    fi
-                '''
+                    docker compose version
+
+                    # garante alembic.ini
+                    [ -f alembic.ini ] || cp alembic.ini.example alembic.ini
+                    [ -d alembic ] || { echo 'Diretório alembic inexistente'; exit 1; }
+                """
             }
         }
-        
-        stage('Linting e Testes') {
+
+        stage('Lint & Test') {
             steps {
                 sh '''
+                    set -e
                     curl -LsSf https://astral.sh/uv/install.sh | sh
                     export PATH="$HOME/.local/bin:$PATH"
                     uv add ruff mypy
@@ -68,60 +66,58 @@ pipeline {
                 '''
             }
         }
-        
-        stage('Construir e Iniciar Aplicações') {
+
+        stage('Build & Up (docker compose)') {
             steps {
-                // Construir e iniciar todos os serviços com Docker Compose
-                sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} build'
-                sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} up -d'
-                
-                // Esperar aplicações inicializarem
-                sh 'sleep 10'
-                
-                // Verificar estado dos containers
-                sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} ps'
-                
-                // Verificar logs da API para diagnosticar problemas
-                sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} logs api'
-                
-                // Verificar se o container da API está rodando
                 sh '''
-                    API_RUNNING=$(docker-compose -p ${DOCKER_COMPOSE_PROJECT} ps | grep api | grep "Up" | wc -l)
-                    if [ $API_RUNNING -eq 0 ]; then
-                        echo "ERRO: Container da API não está rodando!"
-                        echo "Verificando arquivos dentro do container:"
-                        docker-compose -p ${DOCKER_COMPOSE_PROJECT} exec -T db ls -la /var/lib/postgresql/data || true
-                        docker-compose -p ${DOCKER_COMPOSE_PROJECT} exec -T api ls -la /app || true
-                        docker-compose -p ${DOCKER_COMPOSE_PROJECT} exec -T api cat /alembic.ini || true
+                    # Se seus Dockerfiles/compose aceitarem UID/GID, já passa aqui
+                    export UID=${JENKINS_UID}
+                    export GID=${JENKINS_GID}
+
+                    docker compose -p ${DOCKER_COMPOSE_PROJECT} build
+                    docker compose -p ${DOCKER_COMPOSE_PROJECT} up -d
+
+                    echo '⏳ Aguardando containers subirem…'
+                    sleep 10
+                    docker compose -p ${DOCKER_COMPOSE_PROJECT} ps
+                    docker compose -p ${DOCKER_COMPOSE_PROJECT} logs --no-color api
+                '''
+            }
+        }
+
+        stage('Smoke check') {
+            steps {
+                sh '''
+                    API_UP=$(docker compose -p ${DOCKER_COMPOSE_PROJECT} ps | grep api | grep Up | wc -l)
+                    if [ "$API_UP" -eq 0 ]; then
+                        echo 'API não subiu – exibindo logs:'
+                        docker compose -p ${DOCKER_COMPOSE_PROJECT} logs --no-color api || true
                         exit 1
                     fi
                 '''
             }
         }
     }
-    
+
+    /* -------------- Pós-build ------------------ */
     post {
+        always {
+            // derruba stack e remove volumes - não deixa nada preso
+            sh 'docker compose -p ${DOCKER_COMPOSE_PROJECT} down -v || true'
+
+            // remove containers órfãos (mas não faz system prune global)
+            sh 'docker container prune -f || true'
+
+            // workspace agora só tem arquivos com uid 115 → pode apagar
+            deleteDir()
+        }
+
         success {
-            echo "Pipeline executado com sucesso! Aplicações rodando em Docker."
+            echo '✅ Pipeline executado com sucesso.'
         }
+
         failure {
-            echo "Pipeline falhou. Verifique os logs para mais detalhes."
-            
-            // Capturar logs da API em caso de falha
-            sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} logs api || true'
-            
-            // Em caso de falha, tenta parar os containers
-            sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} down || true'
-        }
-        cleanup {
-            // Opção 1: Manter aplicações rodando
-            echo "Aplicações continuam rodando em http://localhost:8000"
-            
-            // Opção 2: Desligar aplicações (descomente se preferir parar)
-            // sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} down'
-            
-            // Limpar workspace
-            cleanWs()
+            echo '❌ Pipeline falhou – verifique os logs acima.'
         }
     }
-} 
+}
