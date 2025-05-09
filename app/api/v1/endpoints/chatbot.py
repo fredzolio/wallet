@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, Request
 from typing import List
 from uuid import uuid4
 
@@ -60,7 +60,7 @@ async def ask_chatbot(
             question_id=question_id,
             suggested_questions=suggested_questions
         )
-    except Exception as e:
+    except Exception:
         # Em caso de erro, retornar mensagem de fallback
         return ChatbotResponse(
             answer="Desculpe, estou com dificuldades técnicas no momento. Tente novamente mais tarde.",
