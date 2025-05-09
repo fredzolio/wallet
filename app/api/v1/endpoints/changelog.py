@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import os
 import logging
 import markdown
+from datetime import datetime
 
 from app.core.deps import get_current_user
 from app.models.user import User
@@ -134,16 +135,25 @@ async def get_changelog(
     Útil para clientes acompanharem atualizações e migrações.
     """
     try:
-        # Garantir que o arquivo CHANGELOG.md existe e está atualizado
-        git_analyzer = GitAnalyzer()
-        git_analyzer.update_changelog(CHANGELOG_FILE)
-        
         # Verificar se o arquivo existe
         if not os.path.exists(CHANGELOG_FILE):
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Arquivo de changelog não encontrado"
-            )
+            logger.error(f"Arquivo de changelog não encontrado: {CHANGELOG_FILE}")
+            # Fallback para um changelog básico quando o arquivo não existe
+            git_analyzer = GitAnalyzer()
+            git_analyzer.update_changelog(CHANGELOG_FILE)
+            
+            if not os.path.exists(CHANGELOG_FILE):
+                return ChangelogResponse(
+                    entries=[
+                        ChangelogEntry(
+                            version="0.1.0",
+                            date=datetime.now().strftime("%Y-%m-%d"),
+                            changes=["Versão inicial da API"]
+                        )
+                    ],
+                    latest_version="0.1.0",
+                    api_version=_get_api_version()
+                )
         
         # Ler o conteúdo do arquivo
         with open(CHANGELOG_FILE, "r", encoding="utf-8") as f:
@@ -153,18 +163,25 @@ async def get_changelog(
         changelog_entries = _parse_changelog_content(content)
         
         if not changelog_entries:
-            # Fallback para um changelog básico
-            changelog_entries = [
-                ChangelogEntry(
-                    version="0.1.0",
-                    date=git_analyzer.generate_version_info()["date"].split()[0],
-                    changes=["Versão inicial da API"]
-                )
-            ]
-            
+            logger.warning("Nenhuma entrada encontrada no arquivo de changelog")
+            # Fallback para um changelog básico quando não há entradas
+            return ChangelogResponse(
+                entries=[
+                    ChangelogEntry(
+                        version="0.1.0",
+                        date=datetime.now().strftime("%Y-%m-%d"),
+                        changes=["Versão inicial da API"]
+                    )
+                ],
+                latest_version="0.1.0",
+                api_version=_get_api_version()
+            )
+        
         # Obter a última versão
+        git_analyzer = GitAnalyzer()
         latest_version = git_analyzer.get_api_version_from_tags()
         
+        logger.info(f"Retornando {len(changelog_entries)} entradas do changelog")
         return ChangelogResponse(
             entries=changelog_entries,
             latest_version=latest_version,
@@ -187,23 +204,27 @@ async def get_changelog_html(
     Útil para exibição direta em aplicações web.
     """
     try:
-        # Garantir que o arquivo CHANGELOG.md existe e está atualizado
-        git_analyzer = GitAnalyzer()
-        git_analyzer.update_changelog(CHANGELOG_FILE)
-        
-        # Ler o conteúdo do arquivo
+        # Verificar se o arquivo existe
         if not os.path.exists(CHANGELOG_FILE):
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Arquivo de changelog não encontrado"
-            )
+            logger.error(f"Arquivo de changelog não encontrado: {CHANGELOG_FILE}")
+            # Fallback para um changelog básico quando o arquivo não existe
+            git_analyzer = GitAnalyzer()
+            git_analyzer.update_changelog(CHANGELOG_FILE)
             
+            if not os.path.exists(CHANGELOG_FILE):
+                return {"html": "<h1>Changelog</h1><p>Versão inicial da API</p>"}
+            
+        # Ler o conteúdo do arquivo
         with open(CHANGELOG_FILE, "r", encoding="utf-8") as f:
             content = f.read()
             
-        # Converter Markdown para HTML
-        html_content = markdown.markdown(content)
+        # Converter Markdown para HTML com suporte completo a extensões
+        html_content = markdown.markdown(
+            content,
+            extensions=['extra']
+        )
         
+        logger.info("Retornando changelog em formato HTML")
         return {"html": html_content}
         
     except Exception as e:

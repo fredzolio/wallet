@@ -4,6 +4,7 @@
 
 ### Features
 
+* atualiza o CHANGELOG.md com novas informações sobre gerenciamento de dependências e ajustes na lógica de parsing de mensagens de commit; atualiza a versão e o commit no version.json; modifica a lógica de parsing no changelog.py para remover hashes de commit e simplificar a formatação das entradas. (451d3a4)
 * atualiza o sistema de gerenciamento de dependências, substituindo 'tasks' por 'taskipy' no pyproject.toml; adiciona novas dependências e remove a dependência 'datadispatch'; ajusta a lógica de parsing de mensagens de commit no GitAnalyzer para suportar formatos simplificados e completos. (3f79ec3)
 * adiciona novas variáveis de ambiente e ajusta comando no docker-compose.yaml para habilitar HTTP e melhorar a configuração do Keycloak (f0a1db2)
 * adiciona configuração de Nginx e Certbot no docker-compose.yaml, atualiza Jenkinsfile para gerenciar certificados HTTPS e verifica domínio DuckDNS, melhorando a segurança e a configuração do ambiente (4978f90)
