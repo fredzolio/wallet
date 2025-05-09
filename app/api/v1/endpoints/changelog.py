@@ -83,7 +83,7 @@ def _parse_changelog_content(content: str) -> List[ChangelogEntry]:
             
             version = version_parts[0].strip()
             if version == "Unreleased":
-                version = "próxima"
+                version = "não lançado"
                 
             date = version_parts[1].replace(")", "").strip() if len(version_parts) > 1 else ""
             
