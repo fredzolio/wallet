@@ -5,8 +5,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    networks:
-      - vizo_network
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,8 +17,6 @@ services:
   redis:
     image: redis:7
     command: ["redis-server", "--appendonly", "yes"]
-    networks:
-      - vizo_network
     volumes:
       - redis_data:/data
     ports: ["6379:6379"]
@@ -41,8 +37,6 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       PGADMIN_CONFIG_PROXY_PREFIX: /pgadmin
       SCRIPT_NAME: /pgadmin
-    networks:
-      - vizo_network
     ports:
       - "5050:80"
     volumes:
@@ -65,8 +59,6 @@ services:
     ports:
       - "8088:8080"
     command: ["start-dev", "--hostname-path=/auth", "--proxy=edge", "--health-enabled=true"]
-    networks:
-      - vizo_network
     depends_on:
       db: { condition: service_healthy }
     volumes:
@@ -81,8 +73,6 @@ services:
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
-    networks:
-      - vizo_network
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -105,8 +95,6 @@ services:
       - GF_SERVER_ROOT_URL=https://walletapi.duckdns.org/grafana
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     restart: unless-stopped
-    networks:
-      - vizo_network
     ports:
       - "3001:3000"
     depends_on:
@@ -147,8 +135,6 @@ services:
       PROJECT_NAME: ${PROJECT_NAME}
       CORS_ORIGINS: ${CORS_ORIGINS}
     ports: ["8000:8000"]
-    networks:
-      - vizo_network
     volumes:
       - ./app:/app/app
       - ./alembic:/app/alembic
@@ -168,7 +154,3 @@ volumes:
   keycloak_data:
   prometheus_data:
   grafana_data:
-
-networks:
-  vizo_network:
-    external: true
