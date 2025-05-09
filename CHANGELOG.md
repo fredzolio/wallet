@@ -2,22 +2,22 @@
 
 ## Unreleased (2025-05-09)
 
-### Features
+### Other Changes
 
-* adiciona suporte a geração automática de changelog (2451384)
-* first version (03a3efb)
-
-### Code Refactoring
-
-* atualiza a geração do changelog para usar markdown e remove dependências obsoletas (01adf8f)
-* simplifica a leitura e geração do changelog, atualiza o template e melhora o tratamento de erros na função de geração (429ad01)
-* atualiza Dockerfile para incluir o Git, adiciona suporte ao python-semantic-release no pyproject.toml e implementa geração de changelog com fallback para GitAnalyzer (af71a30)
-
-### Chores
-
-* atualiza a data de lançamento no changelog e corrige a exibição da versão não lançada (a40af2d)
-* corrige a instalação de dependências no CI para usar modo editável (300a57d)
-* simplifica a instalação de dependências no CI removendo a opção de instalação em modo editável (caf86c6)
-* adiciona app/data ao .gitignore para evitar controle de versão (8aea807)
-* remove app/data do controle de versão (fb73655)
+*  (a55c266)
+*  (2dff8c6)
+*  (7637411)
+*  (6e070d5)
+*  (37baba6)
+*  (a20725f)
+*  (a40af2d)
+*  (300a57d)
+*  (caf86c6)
+*  (01adf8f)
+*  (2451384)
+*  (03a3efb)
+*  (8aea807)
+*  (fb73655)
+*  (429ad01)
+*  (af71a30)
 
