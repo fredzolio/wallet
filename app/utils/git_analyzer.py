@@ -22,6 +22,26 @@ class GitAnalyzer:
             repo_path: Caminho para o repositório Git
         """
         self.repo_path = repo_path
+        self.git_available = self._check_git_available()
+        
+    def _check_git_available(self) -> bool:
+        """
+        Verifica se o Git está disponível no sistema.
+        
+        Returns:
+            True se Git está disponível, False caso contrário
+        """
+        try:
+            subprocess.run(
+                ["git", "--version"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False
+            )
+            return True
+        except FileNotFoundError:
+            logger.warning("Git não encontrado no sistema. Funcionalidades de changelog serão limitadas.")
+            return False
         
     def _run_git_command(self, command: List[str]) -> str:
         """
@@ -33,6 +53,10 @@ class GitAnalyzer:
         Returns:
             String com a saída do comando
         """
+        if not self.git_available:
+            logger.info(f"Git não disponível. Comando não executado: git {' '.join(command)}")
+            return ""
+            
         try:
             result = subprocess.run(
                 ["git"] + command,
@@ -44,6 +68,14 @@ class GitAnalyzer:
             return result.stdout.strip()
         except subprocess.CalledProcessError as e:
             logger.error(f"Erro ao executar comando git: {e}")
+            return ""
+        except FileNotFoundError:
+            # Caso o Git seja removido após a inicialização
+            self.git_available = False
+            logger.error("Git não encontrado no sistema. Certifique-se que o Git está instalado.")
+            return ""
+        except Exception as e:
+            logger.error(f"Erro inesperado ao executar comando git: {e}")
             return ""
     
     def get_tags(self) -> List[str]:
@@ -77,7 +109,7 @@ class GitAnalyzer:
             Dicionário com os dados estruturados do commit
         """
         # Pattern para Conventional Commits
-        pattern = r"^(?P<type>feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(?:\((?P<scope>[^\)]+)\))?: (?P<description>.+)(?:\n\n(?P<body>[\s\S]*))?(?:\n\n(?P<footer>BREAKING CHANGE: [\s\S]*))?$"
+        pattern = r"^(?P<type>feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(?:\((?P<scope>[^\)]+)\))?(?P<breaking>!)?: (?P<description>.+)(?:\n\n(?P<body>[\s\S]*))?(?:\n\n(?P<footer>[\s\S]*))?$"
         
         match = re.match(pattern, commit_message, re.MULTILINE)
         if not match:
@@ -93,9 +125,21 @@ class GitAnalyzer:
         
         data = match.groupdict()
         
-        # Verificar se é uma mudança que quebra compatibilidade
-        breaking = bool(data.get("footer") and "BREAKING CHANGE:" in data.get("footer", ""))
-        breaking = breaking or commit_message.startswith("BREAKING CHANGE:") or "!" in data.get("type", "")
+        # Verificar se é uma mudança que quebra compatibilidade (breaking change)
+        # 1. Via "!" após o tipo
+        breaking = bool(data.get("breaking"))
+        
+        # 2. Via texto BREAKING CHANGE no footer
+        if not breaking and data.get("footer"):
+            breaking = "BREAKING CHANGE:" in data.get("footer", "")
+            
+        # 3. Via texto BREAKING CHANGE no body
+        if not breaking and data.get("body"):
+            breaking = "BREAKING CHANGE:" in data.get("body", "")
+            
+        # 4. Via prefixo BREAKING CHANGE na própria mensagem
+        if not breaking:
+            breaking = commit_message.startswith("BREAKING CHANGE:")
         
         return {
             "type": data.get("type", "other"),
@@ -205,7 +249,7 @@ class GitAnalyzer:
                 date = datetime.now().strftime("%Y-%m-%d")
             else:
                 date_output = self._run_git_command(["log", "-1", "--format=%ai", current_tag])
-                date = datetime.fromisoformat(date_output.split()[0]).strftime("%Y-%m-%d")
+                date = datetime.fromisoformat(date_output.split()[0]).strftime("%Y-%m-%d") if date_output else datetime.now().strftime("%Y-%m-%d")
                 
             changelog += f"{version_title} ({date})\n\n"
             
@@ -301,22 +345,33 @@ class GitAnalyzer:
         """
         version = self.get_api_version_from_tags()
         
+        if not self.git_available:
+            return {
+                "version": version,
+                "commit": "unknown",
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S %z"),
+                "dirty": False,
+                "branch": "main",
+                "git_available": False
+            }
+        
         # Obter último commit
-        last_commit_hash = self._run_git_command(["rev-parse", "--short", "HEAD"])
-        last_commit_date = self._run_git_command(["log", "-1", "--format=%ci"])
+        last_commit_hash = self._run_git_command(["rev-parse", "--short", "HEAD"]) or "unknown"
+        last_commit_date = self._run_git_command(["log", "-1", "--format=%ci"]) or datetime.now().strftime("%Y-%m-%d %H:%M:%S %z")
         
         # Verificar se há mudanças não commitadas
         dirty = bool(self._run_git_command(["status", "--porcelain"]))
         
         # Obter branch atual
-        branch = self._run_git_command(["rev-parse", "--abbrev-ref", "HEAD"])
+        branch = self._run_git_command(["rev-parse", "--abbrev-ref", "HEAD"]) or "main"
         
         return {
             "version": version,
             "commit": last_commit_hash,
             "date": last_commit_date,
             "dirty": dirty,
-            "branch": branch
+            "branch": branch,
+            "git_available": True
         }
         
     def save_version_info(self, output_path: str = "app/version.json") -> Dict:
