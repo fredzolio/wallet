@@ -100,7 +100,10 @@ class GitAnalyzer:
     
     def parse_conventional_commit(self, commit_message: str) -> Dict[str, Any]:
         """
-        Faz o parsing de uma mensagem de commit no formato Conventional Commits.
+        Faz o parsing de uma mensagem de commit no formato simplificado.
+        Aceita formatos:
+        - tipo: descrição (ex: "fix: corrige bug")
+        - tipo(escopo): descrição (ex: "feat(auth): adiciona login")
         
         Args:
             commit_message: Mensagem do commit a ser analisada
@@ -108,13 +111,6 @@ class GitAnalyzer:
         Returns:
             Dicionário com informações do commit (tipo, escopo, descrição, breaking)
         """
-        # Padrão para mensagem no formato Conventional Commits
-        # Exemplos:
-        # feat(auth): add OAuth2 support
-        # fix: correct validation error
-        # feat!: breaking change
-        pattern = r"^(\w+)(?:\(([^\)]+)\))?(!)?:\s*(.+)$"
-        
         # Inicializar valores padrão
         commit_info: Dict[str, Any] = {
             "type": "other",
@@ -124,34 +120,31 @@ class GitAnalyzer:
             "hash": ""  # Será preenchido depois
         }
         
-        match = re.match(pattern, commit_message, re.MULTILINE)
-        if not match:
-            # Fallback para commits que não seguem o padrão
+        # Padrão simplificado para formato "tipo: descrição"
+        simple_pattern = r"^(\w+):\s*(.+)$"
+        
+        # Padrão completo para formato Conventional Commits (tipo(escopo): descrição)
+        full_pattern = r"^(\w+)(?:\(([^\)]+)\))?(!)?:\s*(.+)$"
+        
+        # Primeiro tenta o padrão simplificado
+        simple_match = re.match(simple_pattern, commit_message, re.MULTILINE)
+        if simple_match:
+            commit_type, description = simple_match.groups()
+            commit_info["type"] = commit_type
+            commit_info["description"] = description
             return commit_info
         
-        data = match.groupdict()
+        # Se não encontrar, tenta o padrão completo
+        full_match = re.match(full_pattern, commit_message, re.MULTILINE)
+        if full_match:
+            commit_type, scope, breaking, description = full_match.groups()
+            commit_info["type"] = commit_type
+            commit_info["scope"] = scope
+            commit_info["breaking"] = bool(breaking)
+            commit_info["description"] = description
+            return commit_info
         
-        # Verificar se é uma mudança que quebra compatibilidade (breaking change)
-        # 1. Via "!" após o tipo
-        breaking = bool(data.get("breaking"))
-        
-        # 2. Via texto BREAKING CHANGE no footer
-        if not breaking and data.get("footer"):
-            breaking = "BREAKING CHANGE:" in data.get("footer", "")
-            
-        # 3. Via texto BREAKING CHANGE no body
-        if not breaking and data.get("body"):
-            breaking = "BREAKING CHANGE:" in data.get("body", "")
-            
-        # 4. Via prefixo BREAKING CHANGE na própria mensagem
-        if not breaking:
-            breaking = commit_message.startswith("BREAKING CHANGE:")
-        
-        commit_info["type"] = data.get("type", "other")
-        commit_info["scope"] = data.get("scope")
-        commit_info["breaking"] = breaking
-        commit_info["description"] = data.get("description", "")
-        
+        # Fallback para commits que não seguem nenhum dos padrões
         return commit_info
     
     def get_commits_between_tags(self, start_tag: Optional[str] = None, end_tag: str = "HEAD") -> List[Dict]:
