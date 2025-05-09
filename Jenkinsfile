@@ -1,53 +1,43 @@
 pipeline {
     agent any
 
-    /* ------------- Ferramentas ------------- */
-    tools {
-        git 'Default'                       // /usr/bin/git registrado em "Manage → Tools"
-    }
+    /* ---------- Ferramentas ---------- */
+    tools { git 'Default' }
 
-    /* ------------- Variáveis --------------- */
     environment {
         DOCKER_COMPOSE_PROJECT = 'wallet'
         ENV_FILE               = credentials('wallet-env-file')
-
-        // uid/gid do processo Jenkins (confirme com `ps -o uid,gid -p $(pgrep -f jenkins.war)`)
-        JENKINS_UID = '115'
-        JENKINS_GID = '121'
+        JENKINS_UID            = '115'   // confirme com ps -o uid
+        JENKINS_GID            = '121'   // confirme com ps -o gid
     }
 
-    /* ------------- Opções ------------------ */
     options {
-        skipDefaultCheckout(true)           // <-- DESLIGA o checkout implícito
+        skipDefaultCheckout(true)
         disableConcurrentBuilds()
     }
 
     stages {
-
-        /* PREP: conserta dono do workspace e faz checkout */
         stage('Prep workspace + Checkout') {
             steps {
-                /* Se o build anterior deixou arquivos root:root, conserta-os */
+                // Conserta dono de execuções anteriores
                 sh '''
                     docker run --rm -u 0:0 \
                       -v "$WORKSPACE":"$WORKSPACE" -w "$WORKSPACE" alpine \
-                      sh -c "chown -R ${JENKINS_UID}:${JENKINS_GID} . || true"
+                      chown -R ${JENKINS_UID}:${JENKINS_GID} . || true
                 '''
-
-                deleteDir()        // agora o Jenkins pode apagar tudo
-
-                checkout scm       // checkout sob controle do seu pipeline
+                // NÃO deleteDir: se a stack anterior estiver rodando,
+                // o workspace está em uso. Basta garantir permissões.
+                checkout scm
             }
         }
 
-        /* ---------- demais estágios (sem mudanças) --------- */
         stage('Configurar ambiente') {
             steps {
                 sh '''
                     cp "${ENV_FILE}" .env
                     docker compose version
                     [ -f alembic.ini ] || cp alembic.ini.example alembic.ini
-                    [ -d alembic ] || { echo "Sem diretório alembic"; exit 1; }
+                    [ -d alembic ] || { echo "Diretório alembic inexistente"; exit 1; }
                 '''
             }
         }
@@ -90,22 +80,30 @@ pipeline {
         }
     }
 
-    /* ------------- Pós-build --------------- */
+    /* ---------- Pós-build ---------- */
     post {
-        always {
+        failure {
+            echo '❌ Falhou – derrubando stack e limpando workspace.'
+
+            // Derruba stack e remove volumes só em falha
             sh 'docker compose -p ${DOCKER_COMPOSE_PROJECT} down -v || true'
 
-            /* Garante que tudo volte a ser 115:121 antes de apagar */
+            // Ajusta permissão e APAGA o workspace (agora nada está montado)
             sh '''
                 docker run --rm -u 0:0 \
                   -v "$WORKSPACE":"$WORKSPACE" -w "$WORKSPACE" alpine \
                   chown -R ${JENKINS_UID}:${JENKINS_GID} . || true
             '''
-
             deleteDir()
         }
 
-        success { echo '✅ Pipeline finalizado com sucesso.' }
-        failure { echo '❌ Pipeline falhou — veja os logs acima.' }
+        success {
+            echo '🟢 Build ok – stack continua rodando em background.'
+            sh '''
+                docker run --rm -u 0:0 \
+                  -v "$WORKSPACE":"$WORKSPACE" -w "$WORKSPACE" alpine \
+                  chown -R ${JENKINS_UID}:${JENKINS_GID} . || true
+            '''
+        }
     }
 }
