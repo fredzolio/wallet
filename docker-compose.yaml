@@ -106,7 +106,7 @@ services:
       - 'traefik.http.routers.prometheus.entrypoints=websecure'
       - 'traefik.http.routers.prometheus.tls.certresolver=myresolver'
       - 'traefik.http.middlewares.prometheus-prefix.replacepathregex.regex=^/prometheus/(.*)'
-      - 'traefik.http.middlewares.prometheus-prefix.replacepathregex.replacement=/$1'
+      - 'traefik.http.middlewares.prometheus-prefix.replacepathregex.replacement=/$$1'
       - 'traefik.http.routers.prometheus.middlewares=prometheus-prefix@docker'
       - 'traefik.http.services.prometheus.loadbalancer.server.port=9090'
       - 'traefik.http.routers.prometheus.priority=20'
