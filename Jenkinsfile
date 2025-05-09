@@ -84,7 +84,7 @@ pipeline {
                     curl -s http://localhost:9090/api/v1/targets | grep "state.*up"
                     
                     # Verificar se Grafana está disponível
-                    curl -s http://localhost:3000/api/health | grep "database.*ok"
+                    curl -s http://localhost:3001/api/health | grep "database.*ok"
                 '''
             }
         }

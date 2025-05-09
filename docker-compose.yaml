@@ -45,7 +45,7 @@ services:
       KC_DB_PASSWORD: ${KC_DB_PASSWORD}
       KC_FEATURES: ${KC_FEATURES}
     ports:
-      - "8080:8080"
+      - "8088:8080"
     command: ["start-dev", "--health-enabled=true"]
     depends_on:
       db: { condition: service_healthy }
