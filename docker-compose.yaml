@@ -74,7 +74,6 @@ services:
     depends_on:
       db: { condition: service_healthy }
       redis: { condition: service_started }
-      keycloak: { condition: service_started }
     environment:
       DATABASE_URL: ${DATABASE_URL}
       SECRET_KEY: ${SECRET_KEY}
@@ -112,6 +111,5 @@ volumes:
   db_data:
   redis_data:
   pgadmin_data:
-  keycloak_data:
   prometheus_data:
   grafana_data:
