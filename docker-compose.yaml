@@ -49,6 +49,9 @@ services:
       KC_DB_USERNAME: ${KC_DB_USERNAME}
       KC_DB_PASSWORD: ${KC_DB_PASSWORD}
       KC_FEATURES: ${KC_FEATURES}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HOSTNAME_STRICT: "false" 
     ports:
       - "8088:8080"
     command: ["start-dev", "--health-enabled=true"]
