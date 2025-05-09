@@ -1,42 +1,54 @@
 pipeline {
-    agent any                       // mesmo executor de sempre
+    agent any
 
+    /* ------------- Ferramentas ------------- */
     tools {
-        git 'Default'               // /usr/bin/git já configurado em Manage → Tools
+        git 'Default'                       // /usr/bin/git registrado em "Manage → Tools"
     }
 
+    /* ------------- Variáveis --------------- */
     environment {
-        PYTHON_VERSION         = '3.13'
         DOCKER_COMPOSE_PROJECT = 'wallet'
-
-        // secret text/file no Jenkins: wallet-env-file
         ENV_FILE               = credentials('wallet-env-file')
 
-        // UID e GID do processo Jenkins (confirme com `ps -o uid,gid -p $(pgrep -f jenkins.war)`)
-        JENKINS_UID            = '115'
-        JENKINS_GID            = '121'
+        // uid/gid do processo Jenkins (confirme com `ps -o uid,gid -p $(pgrep -f jenkins.war)`)
+        JENKINS_UID = '115'
+        JENKINS_GID = '121'
+    }
+
+    /* ------------- Opções ------------------ */
+    options {
+        skipDefaultCheckout(true)           // <-- DESLIGA o checkout implícito
+        disableConcurrentBuilds()
     }
 
     stages {
-        stage('Cleanup + Checkout') {
+
+        /* PREP: conserta dono do workspace e faz checkout */
+        stage('Prep workspace + Checkout') {
             steps {
-                cleanWs()            // apaga o que sobrou do build anterior
-                checkout scm
+                /* Se o build anterior deixou arquivos root:root, conserta-os */
+                sh '''
+                    docker run --rm -u 0:0 \
+                      -v "$WORKSPACE":"$WORKSPACE" -w "$WORKSPACE" alpine \
+                      sh -c "chown -R ${JENKINS_UID}:${JENKINS_GID} . || true"
+                '''
+
+                deleteDir()        // agora o Jenkins pode apagar tudo
+
+                checkout scm       // checkout sob controle do seu pipeline
             }
         }
 
+        /* ---------- demais estágios (sem mudanças) --------- */
         stage('Configurar ambiente') {
             steps {
-                sh """
-                    cp \"${ENV_FILE}\" .env
-
-                    docker --version
+                sh '''
+                    cp "${ENV_FILE}" .env
                     docker compose version
-
-                    # Garante alembic
                     [ -f alembic.ini ] || cp alembic.ini.example alembic.ini
-                    [ -d alembic ] || { echo 'Diretório alembic inexistente'; exit 1; }
-                """
+                    [ -d alembic ] || { echo "Sem diretório alembic"; exit 1; }
+                '''
             }
         }
 
@@ -59,19 +71,16 @@ pipeline {
 
         stage('Build & Up') {
             steps {
-                // Se o seu compose ainda não usa UID/GID, tudo bem:
-                // a etapa de chown no post vai corrigir a posse dos arquivos.
                 sh '''
                     docker compose -p ${DOCKER_COMPOSE_PROJECT} build
                     docker compose -p ${DOCKER_COMPOSE_PROJECT} up -d
                     sleep 10
                     docker compose -p ${DOCKER_COMPOSE_PROJECT} ps
-                    docker compose -p ${DOCKER_COMPOSE_PROJECT} logs --no-color api
                 '''
             }
         }
 
-        stage('Smoke check') {
+        stage('Smoke') {
             steps {
                 sh '''
                     API_UP=$(docker compose -p ${DOCKER_COMPOSE_PROJECT} ps | grep api | grep Up | wc -l)
@@ -81,29 +90,22 @@ pipeline {
         }
     }
 
-    /* ---------- Pós-build ---------- */
+    /* ------------- Pós-build --------------- */
     post {
         always {
-            // 1) Derruba containers + named volumes
             sh 'docker compose -p ${DOCKER_COMPOSE_PROJECT} down -v || true'
 
-            // 2) Ajusta OWNER dos arquivos para Jenkins (115:121)
+            /* Garante que tudo volte a ser 115:121 antes de apagar */
             sh '''
                 docker run --rm -u 0:0 \
                   -v "$WORKSPACE":"$WORKSPACE" -w "$WORKSPACE" alpine \
-                  chown -R ${JENKINS_UID}:${JENKINS_GID} .
+                  chown -R ${JENKINS_UID}:${JENKINS_GID} . || true
             '''
 
-            // 3) Agora é seguro limpar o workspace
             deleteDir()
         }
 
-        success {
-            echo '✅ Pipeline finalizado com sucesso.'
-        }
-
-        failure {
-            echo '❌ Falhou — veja os logs acima.'
-        }
+        success { echo '✅ Pipeline finalizado com sucesso.' }
+        failure { echo '❌ Pipeline falhou — veja os logs acima.' }
     }
 }
