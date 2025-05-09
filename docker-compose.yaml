@@ -181,10 +181,10 @@ services:
       - vizo_network
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.walletapi.rule=Host(`walletapi.duckdns.org`) && PathPrefix(`/api`)'
+      - 'traefik.http.routers.walletapi.rule=Host(`walletapi.duckdns.org`) && PathPrefix(`/`)'
       - 'traefik.http.routers.walletapi.entrypoints=websecure'
       - 'traefik.http.routers.walletapi.tls.certresolver=myresolver'
-      - 'traefik.http.middlewares.walletapi-strip.stripprefix.prefixes=/api'
+      - 'traefik.http.middlewares.walletapi-strip.stripprefix.prefixes=/'
       - 'traefik.http.routers.walletapi.middlewares=walletapi-strip@docker'
       - 'traefik.http.services.walletapi.loadbalancer.server.port=8000'
     volumes:
