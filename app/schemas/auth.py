@@ -35,6 +35,11 @@ class MFASetup(BaseModel):
     """Schema para configuração de MFA."""
     mfa_secret: str
     qr_code_uri: str
+    qr_code_image: str | None = Field(
+        None,
+        description="Imagem QR code em base64",
+        example="data:image/png;base64,..."
+    )
 
 class MFAVerify(BaseModel):
     """Schema para verificação de MFA."""

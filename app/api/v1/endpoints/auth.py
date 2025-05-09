@@ -5,6 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import secrets
 from starlette.responses import RedirectResponse
 import uuid
+import qrcode
+import io
+import base64
 
 from app.core.security import (
     hash_password, 
@@ -261,9 +264,27 @@ async def setup_mfa(
     # Gerar URI para QR code
     qr_code_uri = get_totp_uri(mfa_secret, current_user.email)
     
+    # Gerar imagem QR code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_code_uri)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Converter imagem para base64
+    buffered = io.BytesIO()
+    img.save(buffered)
+    qr_code_image = "data:image/png;base64," + base64.b64encode(buffered.getvalue()).decode()
+    
     return MFASetup(
         mfa_secret=mfa_secret,
-        qr_code_uri=qr_code_uri
+        qr_code_uri=qr_code_uri,
+        qr_code_image=qr_code_image
     )
 
 @router.post("/mfa/verify", status_code=status.HTTP_200_OK)
