@@ -15,6 +15,7 @@
 
 ### Chores
 
+* atualiza a data de lançamento no changelog e corrige a exibição da versão não lançada (a40af2d)
 * corrige a instalação de dependências no CI para usar modo editável (300a57d)
 * simplifica a instalação de dependências no CI removendo a opção de instalação em modo editável (caf86c6)
 * adiciona app/data ao .gitignore para evitar controle de versão (8aea807)
