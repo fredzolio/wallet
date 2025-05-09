@@ -2,6 +2,7 @@ import uuid
 from sqlalchemy import String, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID as SQLAlchemyUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.ext.declarative import declared_attr
 
 from app.db.base_class import Base
 
@@ -11,7 +12,10 @@ class TransportCard(Base):
     Armazena o número do cartão e o saldo atual em centavos.
     """
     
-    __tablename__ = "transportcards"
+    # Sobrescrever corretamente o método __tablename__
+    @declared_attr.directive
+    def __tablename__(cls) -> str:
+        return "transportcards"
     
     id: Mapped[uuid.UUID] = mapped_column(SQLAlchemyUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(SQLAlchemyUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))

@@ -17,7 +17,7 @@ router = APIRouter(prefix="/repository")
 @limiter.limit("5/hour")
 async def index_repository(
     request: Request,
-    index_data: RepositoryIndexRequest = None,
+    index_data: RepositoryIndexRequest,
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -25,8 +25,11 @@ async def index_repository(
     Esta operação pode levar algum tempo para repositórios grandes.
     """        
     try:
+        # Definir padrões padrão se não fornecidos
+        ignore_patterns = index_data.ignore_patterns or []
+        
         result = await repository_knowledge.index_repository(
-            ignore_patterns=index_data.ignore_patterns
+            ignore_patterns=ignore_patterns
         )
         
         return RepositoryIndexResponse(

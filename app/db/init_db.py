@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 from sqlalchemy import select
 
-from app.db.base import Base
+from app.db.base_class import Base
 from app.db.session import engine
 from app.models.user import User
 from app.core.security import hash_password

@@ -35,6 +35,12 @@ dependencies = [
   "google-genai>=1.11.0",
   "markdown>=3.5.2",
   "ruff>=0.11.8",
+  "mypy>=1.15.0",
+  "types-python-jose>=3.4.0.20250224",
+  "types-passlib>=1.7.7.20250408",
+  "types-aiofiles>=24.1.0.20250326",
+  "types-markdown>=3.8.0.20250415",
+  "types-authlib>=1.5.0.20250416",
 ]
 
 [tool.pytest.ini_options]

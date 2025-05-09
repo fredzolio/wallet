@@ -70,9 +70,12 @@ async def list_documents(
     count_result = await db.execute(count_query)
     total = count_result.scalar()
     
+    # Converter para lista de DocumentResponse para atender à tipagem esperada
+    document_responses = [DocumentResponse.model_validate(doc) for doc in documents]
+    
     return DocumentsList(
-        items=documents,
-        total=total
+        items=document_responses,
+        total=total or 0  # Garantir que total é sempre int, não int | None
     )
 
 @router.get("/{document_id}", response_model=DocumentResponse)

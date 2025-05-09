@@ -3,14 +3,14 @@ import pytest_asyncio
 import asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker
 import fakeredis.aioredis
 from typing import AsyncGenerator, Dict
 from unittest.mock import patch
 import logging
 
 from app.core.config import settings as app_settings
-from app.db.base import Base
+from app.db.base_class import Base as BaseImported
 from app.models.user import User
 from app.core.security import hash_password, create_access_token
 from app.main import app
@@ -28,8 +28,10 @@ TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 # Cria engine e session para testes
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-TestingSessionLocal = sessionmaker(
-    test_engine, class_=AsyncSession, expire_on_commit=False
+TestingSessionLocal = async_sessionmaker(
+    bind=test_engine, 
+    class_=AsyncSession, 
+    expire_on_commit=False
 )
 
 # Remove a instância global de fake_redis daqui
@@ -122,12 +124,12 @@ async def test_redis() -> AsyncGenerator[fakeredis.aioredis.FakeRedis, None]:
 async def init_test_db() -> AsyncGenerator[None, None]:
     """Inicializa o banco de testes."""
     async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(BaseImported.metadata.create_all)
     
     yield
     
     async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(BaseImported.metadata.drop_all)
 
 @pytest_asyncio.fixture
 async def db_session(init_test_db) -> AsyncGenerator[AsyncSession, None]:

@@ -68,7 +68,7 @@ async def register(
     await db.refresh(user)
     
     return UserResponse(
-        id=str(user.id),
+        id=user.id,
         email=user.email,
         is_active=user.is_active,
         has_mfa=bool(user.mfa_secret)
@@ -484,7 +484,7 @@ async def keycloak_register(
         await keycloak_client.assign_role(user_id, "user")
         
         return UserResponse(
-            id=user_id,
+            id=uuid.UUID(user_id),
             email=user_in.email,
             is_active=True,
             has_mfa=False

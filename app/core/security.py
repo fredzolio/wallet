@@ -44,9 +44,12 @@ def create_access_token(user_id: uuid.UUID) -> str:
         "type": "access"
     }
     
+    # Garantir que SECRET_KEY seja tratada como uma string
+    secret_key = str(settings.SECRET_KEY) if settings.SECRET_KEY else ""
+    
     encoded_jwt = jwt.encode(
         to_encode, 
-        settings.SECRET_KEY, 
+        secret_key, 
         algorithm=settings.ALGORITHM
     )
     
@@ -66,9 +69,12 @@ def create_refresh_token(user_id: uuid.UUID) -> str:
         "jti": str(uuid.uuid4())
     }
     
+    # Garantir que SECRET_KEY seja tratada como uma string
+    secret_key = str(settings.SECRET_KEY) if settings.SECRET_KEY else ""
+    
     encoded_jwt = jwt.encode(
         to_encode, 
-        settings.SECRET_KEY, 
+        secret_key, 
         algorithm=settings.ALGORITHM
     )
     
@@ -80,9 +86,12 @@ def decode_token(token: str) -> dict | None:
     Retorna None se o token for inválido.
     """
     try:
+        # Garantir que SECRET_KEY seja tratada como uma string
+        secret_key = str(settings.SECRET_KEY) if settings.SECRET_KEY else ""
+        
         payload = jwt.decode(
             token, 
-            settings.SECRET_KEY, 
+            secret_key, 
             algorithms=[settings.ALGORITHM]
         )
         return payload

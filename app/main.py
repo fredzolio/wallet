@@ -122,7 +122,9 @@ def custom_openapi():
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
-app.openapi = custom_openapi
+# Em vez de substituir diretamente o método, alteramos o comportamento da API
+app.openapi_schema = None  # Garantir que o esquema está limpo
+setattr(app, "openapi", custom_openapi)
 
 # Configuração do Prometheus (métricas)
 if settings.ENABLE_PROMETHEUS:

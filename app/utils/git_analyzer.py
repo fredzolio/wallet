@@ -1,6 +1,6 @@
 import subprocess
 import re
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 import os
 from datetime import datetime
 import json
@@ -98,30 +98,36 @@ class GitAnalyzer:
         tags = self.get_tags()
         return tags[0] if tags else None
     
-    def parse_conventional_commit(self, commit_message: str) -> Dict:
+    def parse_conventional_commit(self, commit_message: str) -> Dict[str, Any]:
         """
-        Analisa uma mensagem de commit no formato Conventional Commits.
+        Faz o parsing de uma mensagem de commit no formato Conventional Commits.
         
         Args:
-            commit_message: Mensagem de commit para análise
+            commit_message: Mensagem do commit a ser analisada
             
         Returns:
-            Dicionário com os dados estruturados do commit
+            Dicionário com informações do commit (tipo, escopo, descrição, breaking)
         """
-        # Pattern para Conventional Commits
-        pattern = r"^(?P<type>feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(?:\((?P<scope>[^\)]+)\))?(?P<breaking>!)?: (?P<description>.+)(?:\n\n(?P<body>[\s\S]*))?(?:\n\n(?P<footer>[\s\S]*))?$"
+        # Padrão para mensagem no formato Conventional Commits
+        # Exemplos:
+        # feat(auth): add OAuth2 support
+        # fix: correct validation error
+        # feat!: breaking change
+        pattern = r"^(\w+)(?:\(([^\)]+)\))?(!)?:\s*(.+)$"
+        
+        # Inicializar valores padrão
+        commit_info: Dict[str, Any] = {
+            "type": "other",
+            "scope": None,
+            "breaking": False,
+            "description": commit_message.strip(),
+            "hash": ""  # Será preenchido depois
+        }
         
         match = re.match(pattern, commit_message, re.MULTILINE)
         if not match:
             # Fallback para commits que não seguem o padrão
-            return {
-                "type": "other",
-                "scope": None,
-                "description": commit_message.split("\n")[0],
-                "body": None,
-                "footer": None,
-                "breaking": False
-            }
+            return commit_info
         
         data = match.groupdict()
         
@@ -141,14 +147,12 @@ class GitAnalyzer:
         if not breaking:
             breaking = commit_message.startswith("BREAKING CHANGE:")
         
-        return {
-            "type": data.get("type", "other"),
-            "scope": data.get("scope"),
-            "description": data.get("description", ""),
-            "body": data.get("body"),
-            "footer": data.get("footer"),
-            "breaking": breaking
-        }
+        commit_info["type"] = data.get("type", "other")
+        commit_info["scope"] = data.get("scope")
+        commit_info["breaking"] = breaking
+        commit_info["description"] = data.get("description", "")
+        
+        return commit_info
     
     def get_commits_between_tags(self, start_tag: Optional[str] = None, end_tag: str = "HEAD") -> List[Dict]:
         """
@@ -263,7 +267,7 @@ class GitAnalyzer:
             logger.info(f"Encontrados {len(commits)} commits entre {next_tag} e {current_tag}")
             
             # Classificar commits por tipo
-            commit_types = {
+            commit_types: Dict[str, Dict[str, Any]] = {
                 "feat": {"title": "Features", "commits": []},
                 "fix": {"title": "Bug Fixes", "commits": []},
                 "perf": {"title": "Performance Improvements", "commits": []},
@@ -278,7 +282,7 @@ class GitAnalyzer:
                 "other": {"title": "Other Changes", "commits": []}
             }
             
-            breaking_changes = []
+            breaking_changes: List[Dict[str, Any]] = []
             
             for commit in commits:
                 commit_type = commit["type"]

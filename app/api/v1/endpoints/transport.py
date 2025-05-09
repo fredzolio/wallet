@@ -184,7 +184,10 @@ async def list_recharges(
     count_result = await db.execute(count_query)
     total = count_result.scalar()
     
+    # Converter para lista de RecargaResponse para atender à tipagem esperada
+    recarga_responses = [RecargaResponse.model_validate(recarga) for recarga in recargas]
+    
     return RecargaList(
-        items=recargas,
-        total=total
+        items=recarga_responses,
+        total=total or 0  # Garantir que total é sempre int, não int | None
     )

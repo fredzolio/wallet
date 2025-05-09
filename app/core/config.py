@@ -1,6 +1,5 @@
 from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import computed_field
 
 class Settings(BaseSettings):
     # Configurações gerais
@@ -10,7 +9,6 @@ class Settings(BaseSettings):
     # CORS - definido como string para evitar problemas de parsing
     CORS_ORIGINS_STR: str = "http://localhost:8000,http://localhost:3000"
     
-    @computed_field
     @property
     def CORS_ORIGINS(self) -> List[str]:
         """Converte a string CORS_ORIGINS_STR em uma lista."""

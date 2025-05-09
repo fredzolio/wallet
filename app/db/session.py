@@ -1,6 +1,5 @@
 from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from app.core.config import settings
 
@@ -11,9 +10,9 @@ engine = create_async_engine(
     echo=False,  # Desativa logs de SQL em produção
 )
 
-# Session factory
-AsyncSessionLocal = sessionmaker(
-    engine,
+# Session factory usando async_sessionmaker que é apropriado para AsyncEngine
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
     expire_on_commit=False,
     class_=AsyncSession,
 )

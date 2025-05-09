@@ -15,3 +15,7 @@ alembic.ini
 .pytest_cache/
 
 app/data/*
+
+.ruff_cache/
+
+.mypy_cache/

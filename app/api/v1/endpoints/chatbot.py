@@ -4,6 +4,7 @@ import re
 from typing import Dict, List
 import json
 import time
+import uuid
 
 from app.api.v1.deps import redis, limiter, increment_counter
 from app.core.deps import get_current_user
@@ -87,7 +88,7 @@ def get_suggested_questions(intent: str) -> List[str]:
     
     return suggestions_map.get(intent, suggestions_map["fallback"])
 
-async def store_conversation(user_id: int, question: str, answer: str, question_id: str):
+async def store_conversation(user_id: uuid.UUID, question: str, answer: str, question_id: str):
     """
     Armazena a conversa no Redis para análise futura.
     """
@@ -154,8 +155,8 @@ async def ask_chatbot(
             # Usar o sistema baseado em regras como fallback
             intent = detect_intent(question_data.question)
             response_data = CHATBOT_RESPONSES.get(intent, CHATBOT_RESPONSES["fallback"])
-            answer = response_data["answer"]
-            confidence = response_data["confidence"]
+            answer = str(response_data["answer"])
+            confidence = float(response_data["confidence"])
         
         # Armazenar conversa em background
         background_tasks.add_task(
