@@ -4,6 +4,7 @@
 
 ### Features
 
+* atualiza o CHANGELOG.md com novas informações sobre suporte à geração de QR code na configuração de MFA e ajustes na lógica de parsing; modifica a versão e o commit no version.json. (e1cb0fc)
 * adiciona suporte para geração de QR code na configuração de MFA, incluindo nova dependência 'qrcode' e 'pillow' no pyproject.toml; atualiza o schema MFASetup para incluir a imagem do QR code em base64. (7786fed)
 * atualiza o CHANGELOG.md com informações sobre gerenciamento de dependências e ajustes na lógica de parsing; modifica changelog.py para simplificar a formatação e garantir fallback em caso de erro, além de atualizar a versão e o commit no version.json. (0f7d6bc)
 * atualiza o CHANGELOG.md com novas informações sobre gerenciamento de dependências e ajustes na lógica de parsing de mensagens de commit; atualiza a versão e o commit no version.json; modifica a lógica de parsing no changelog.py para remover hashes de commit e simplificar a formatação das entradas. (451d3a4)

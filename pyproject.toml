@@ -44,6 +44,7 @@ dependencies = [
   "taskipy>=1.14.1",
   "qrcode>=8.2",
   "pillow>=11.2.1",
+  "types-qrcode>=8.2.0.20250506",
 ]
 
 [tool.pytest.ini_options]
@@ -54,5 +55,8 @@ exclude = ["app/db/base.py"]
 
 [tool.taskipy.tasks]
 changelog = "python -m app.utils.git_analyzer"
-
+ruff = "ruff check ."
+ruff-fix = "ruff check --fix ."
+tests = "uv run pytest app/tests/ -v"
+mypy = "uv run mypy app"
 

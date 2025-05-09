@@ -1102,6 +1102,18 @@ wheels = [
 ]
 
 [[package]]
+name = "types-qrcode"
+version = "8.2.0.20250506"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pillow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9b/78/9f99714645b241c8762ba7a457b503024cd84805f4f645421deefd76d1d0/types_qrcode-8.2.0.20250506.tar.gz", hash = "sha256:6c28eec34da5ca0ec655e5f43501311e49d6b922fb7ad3d7ed9923b8ace9805f", size = 15020 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e2/51/fb46d55e07bf785ca1d06c9d4917808ab2d691b45ee4df199d7336256412/types_qrcode-8.2.0.20250506-py3-none-any.whl", hash = "sha256:f6354b3aee767f6f48f1c21759ff00b54fef2691d0fc2afd3479242cd9cb0953", size = 19892 },
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.13.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1211,6 +1223,7 @@ dependencies = [
     { name = "types-markdown" },
     { name = "types-passlib" },
     { name = "types-python-jose" },
+    { name = "types-qrcode" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -1254,6 +1267,7 @@ requires-dist = [
     { name = "types-markdown", specifier = ">=3.8.0.20250415" },
     { name = "types-passlib", specifier = ">=1.7.7.20250408" },
     { name = "types-python-jose", specifier = ">=3.4.0.20250224" },
+    { name = "types-qrcode", specifier = ">=8.2.0.20250506" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.29" },
 ]
 
