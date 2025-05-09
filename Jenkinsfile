@@ -16,7 +16,7 @@ pipeline {
         
         stage('Prune') {
           steps {
-            sh 'docker system prune -af'
+            sh 'docker system prune -f'
           }
         }
 
