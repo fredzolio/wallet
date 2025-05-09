@@ -117,11 +117,16 @@ def _parse_changelog_content() -> List[ChangelogEntry]:
                 
                 # Extrair versão e data
                 import re
-                match = re.match(r"([^\s]+)\s+\(([^)]+)\)", header)
+                match = re.match(r"([^\s(]+)(?:\s+)?(\(([^)]+)\))?", header)
                 
                 if match:
                     version = match.group(1)
-                    date = match.group(2)
+                    # Se for "Unreleased", usar "0.0.0-dev"
+                    if version.lower() == "unreleased":
+                        version = "0.0.0-dev"
+                    
+                    # Extrair data se estiver presente
+                    date = match.group(3) if match.group(2) else "N/A"
                     
                     # Processar categorias
                     changes = []
@@ -136,9 +141,9 @@ def _parse_changelog_content() -> List[ChangelogEntry]:
                         elif line.startswith("* "):
                             item = line[2:].strip()
                             
-                            if current_category in ["BREAKING CHANGES", "⚠ BREAKING CHANGES"]:
+                            if current_category and current_category.lower() in ["breaking changes", "⚠ breaking changes"]:
                                 breaking_changes.append(item)
-                            elif current_category == "Deprecations":
+                            elif current_category and current_category.lower() == "deprecations":
                                 deprecations.append(item)
                             elif current_category:
                                 changes.append(f"{current_category}: {item}")

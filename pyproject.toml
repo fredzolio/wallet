@@ -49,15 +49,12 @@ tag_format = "v{version}"
 [tool.semantic_release.commit_parser_options]
 allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"]
 minor_tags = ["feat"]
-patch_tags = ["fix", "perf"]
+patch_tags = ["fix", "perf", "refactor"]
+additional_tagging = {chore = "patch", docs = "patch", style = "patch", test = "patch", ci = "patch"}
 
-[tool.semantic_release.default_templates.changelog_file]
+[tool.semantic_release.changelog]
 template_dir = "templates"
+
+[tool.semantic_release.changelog.default_templates]
 changelog_file = "CHANGELOG.md"
-exclude_commit_patterns = [
-    "^chore\\(release\\): .*$",
-    "^chore\\(deps\\): .*$",
-    "^ci: .*$",
-    "^test: .*$",
-    "^style: .*$"
-]
+exclude_commit_patterns = []
