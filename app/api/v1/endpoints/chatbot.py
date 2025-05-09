@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Body, Request
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
 from uuid import uuid4, UUID
 import re
-from typing import Dict, List, Optional, Any
+from typing import Dict, List
 import json
 import time
 
@@ -177,7 +177,7 @@ async def ask_chatbot(
             question_id=question_id,
             suggested_questions=suggested_questions
         )
-    except Exception as e:
+    except Exception:
         # Em caso de erro, retornar mensagem de fallback
         return ChatbotResponse(
             answer="Desculpe, estou com dificuldades técnicas no momento. Tente novamente mais tarde.",
@@ -214,7 +214,7 @@ async def submit_feedback(
         )
         
         return {"message": "Feedback recebido com sucesso. Obrigado!"}
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro ao processar feedback"

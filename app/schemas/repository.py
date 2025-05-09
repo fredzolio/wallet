@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, List, Any
+from typing import Optional, List
 
 class RepositoryQueryRequest(BaseModel):
     """Schema para consulta ao repositório."""

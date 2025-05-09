@@ -3,7 +3,6 @@ import logging
 from app.core.config import settings
 import random
 from google import genai
-import time
 import asyncio
 from google.genai.errors import ClientError
 

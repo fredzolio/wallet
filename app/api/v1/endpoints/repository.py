@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
-from typing import Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 
 from app.api.v1.deps import redis, limiter
 from app.core.deps import get_current_user

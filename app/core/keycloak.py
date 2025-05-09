@@ -2,7 +2,7 @@ from authlib.integrations.httpx_client import AsyncOAuth2Client
 from httpx import AsyncClient
 from fastapi import HTTPException, status
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 from app.core.config import settings
 

@@ -1,15 +1,13 @@
 import json
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 import logging
 from pathlib import Path
 import numpy as np
-from redis.asyncio import Redis
 import aiofiles
 import pickle
 import time
 
-from app.core.config import settings
 from app.api.v1.deps import redis
 from app.services.llm_service import gemini_client
 

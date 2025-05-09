@@ -1,6 +1,5 @@
 import uuid
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
 
 class UserCreate(BaseModel):
     """Schema para criação de usuário."""

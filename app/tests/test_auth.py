@@ -2,7 +2,6 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-import re
 from typing import Dict
 from unittest.mock import patch, MagicMock, AsyncMock
 from starlette.responses import RedirectResponse

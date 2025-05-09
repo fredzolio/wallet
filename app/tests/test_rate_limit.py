@@ -1,6 +1,5 @@
 import pytest
 from httpx import AsyncClient
-import asyncio
 from typing import Dict
 
 from app.models.user import User
@@ -81,7 +80,7 @@ async def test_rate_limit_reset(async_client: AsyncClient) -> None:
     # Tentativa que deveria exceder o limite
     response_over_limit = await async_client.post(
         "/api/v1/auth/register", 
-        json={"email": f"test_reset_over@example.com", "password": "password123"}
+        json={"email": "test_reset_over@example.com", "password": "password123"}
     )
     assert response_over_limit.status_code == 429
 

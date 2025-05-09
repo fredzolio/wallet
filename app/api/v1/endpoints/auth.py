@@ -1,13 +1,10 @@
-from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from uuid import uuid4
 import secrets
 from starlette.responses import RedirectResponse
 from httpx import AsyncClient
-from jwt import decode
 import uuid
 
 from app.core.security import (

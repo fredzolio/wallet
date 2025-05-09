@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 import logging
 from pathlib import Path
 import numpy as np
@@ -8,10 +8,7 @@ import aiofiles
 import pickle
 import time
 import asyncio
-import subprocess
-from glob import glob
 
-from app.core.config import settings
 from app.api.v1.deps import redis
 from app.services.llm_service import gemini_client
 

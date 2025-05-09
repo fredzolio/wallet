@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 import fakeredis.aioredis
 from typing import AsyncGenerator, Dict
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import logging
 
 from app.core.config import settings as app_settings
@@ -20,7 +20,6 @@ from app.api.v1.deps import redis as app_redis_global
 # Imports para SlowAPI
 from slowapi import Limiter as SlowAPILimiter_local
 from slowapi.util import get_remote_address as slowapi_get_remote_address
-from slowapi.errors import RateLimitExceeded
 
 from redis.asyncio import Redis as ActualAsyncRedis
 

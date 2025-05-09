@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Boolean, String, BigInteger
+from sqlalchemy import Boolean, String
 from sqlalchemy.dialects.postgresql import UUID as SQLAlchemyUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

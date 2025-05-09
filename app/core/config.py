@@ -1,8 +1,6 @@
-import secrets
-import json
-from typing import List, Any
+from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator, computed_field
+from pydantic import computed_field
 
 class Settings(BaseSettings):
     # Configurações gerais

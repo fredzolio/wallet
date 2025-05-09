@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, List
+from typing import Optional, Dict
 
 class ChatbotRequest(BaseModel):
     """Schema para requisição ao chatbot."""
