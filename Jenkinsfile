@@ -41,6 +41,12 @@ pipeline {
                     docker compose version
                     [ -f alembic.ini ] || cp alembic.ini.example alembic.ini
                     [ -d alembic ]   || { echo "Diretório alembic inexistente"; exit 1; }
+                    
+                    # Cria diretórios para Nginx e Certbot
+                    mkdir -p nginx/conf certbot/conf certbot/www
+                    
+                    # Verifica domínio DuckDNS no .env
+                    grep -q "DUCKDNS_DOMAIN" .env || { echo "DUCKDNS_DOMAIN não configurado no .env"; exit 1; }
                 '''
             }
         }
@@ -62,6 +68,28 @@ pipeline {
             }
         }
 
+        stage('Configurar HTTPS') {
+            steps {
+                sh '''
+                    # Atualiza os arquivos de configuração com o domínio DuckDNS real
+                    DUCKDNS_DOMAIN=$(grep DUCKDNS_DOMAIN .env | cut -d= -f2)
+                    
+                    # Substitui domínio nos arquivos de configuração
+                    sed -i "s/seudominio.duckdns.org/$DUCKDNS_DOMAIN/g" nginx/conf/app.conf
+                    sed -i "s/seudominio.duckdns.org/$DUCKDNS_DOMAIN/g" init-letsencrypt.sh
+                    
+                    # Configura e-mail para Let's Encrypt
+                    EMAIL=$(grep ACME_EMAIL .env | cut -d= -f2)
+                    if [ ! -z "$EMAIL" ]; then
+                        sed -i "s/seu-email@exemplo.com/$EMAIL/g" init-letsencrypt.sh
+                    fi
+                    
+                    # Torna o script executável
+                    chmod +x init-letsencrypt.sh
+                '''
+            }
+        }
+
         stage('Build & Up') {
             steps {
                 sh '''
@@ -73,11 +101,24 @@ pipeline {
             }
         }
 
+        stage('Inicializar certificados') {
+            steps {
+                sh '''
+                    # Executa o script para inicializar os certificados
+                    # Use -y para aceitar automaticamente a sobreposição de certificados existentes
+                    echo "y" | ./init-letsencrypt.sh
+                '''
+            }
+        }
+
         stage('Smoke') {
             steps {
                 sh '''
                     API_UP=$(docker compose -p ${DOCKER_COMPOSE_PROJECT} ps | grep api | grep Up | wc -l)
                     [ "$API_UP" -eq 1 ] || { echo "API não subiu"; exit 1; }
+                    
+                    NGINX_UP=$(docker compose -p ${DOCKER_COMPOSE_PROJECT} ps | grep nginx | grep Up | wc -l)
+                    [ "$NGINX_UP" -eq 1 ] || { echo "Nginx não subiu"; exit 1; }
                 '''
             }
         }

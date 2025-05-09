@@ -19,3 +19,5 @@ app/data/*
 .ruff_cache/
 
 .mypy_cache/
+
+README-HTTPS.md
