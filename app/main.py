@@ -12,7 +12,6 @@ from app.api.v1.endpoints.documents import router as documents_router
 from app.api.v1.endpoints.transport import router as transport_router
 from app.api.v1.endpoints.chatbot import router as chatbot_router
 from app.api.v1.endpoints.changelog import router as changelog_router
-from app.api.v1.endpoints.repository import router as repository_router
 from app.core.config import settings
 from app.db.init_db import init_db
 from app.db.session import AsyncSessionLocal
@@ -105,7 +104,6 @@ app.include_router(documents_router, prefix="/api/v1", tags=["Documentos"])
 app.include_router(transport_router, prefix="/api/v1", tags=["Transporte"])
 app.include_router(chatbot_router, prefix="/api/v1", tags=["Chatbot"])
 app.include_router(changelog_router, prefix="/api/v1", tags=["Changelog"])
-app.include_router(repository_router, prefix="/api/v1", tags=["Repositório"])
 
 # Descrição da API personalizada
 def custom_openapi():
