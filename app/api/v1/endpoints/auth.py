@@ -8,6 +8,7 @@ import uuid
 import qrcode
 import io
 import base64
+from typing import Optional
 
 from app.core.security import (
     hash_password, 
@@ -31,7 +32,6 @@ from app.schemas.auth import (
     RefreshToken,
     MFASetup,
     MFAVerify,
-    MFALogin,
 )
 from app.core.config import settings
 
@@ -121,7 +121,7 @@ async def login(
 async def login_mfa(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    code: str = None,
+    code: Optional[str] = None,
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -139,7 +139,9 @@ async def login_mfa(
         password, mfa_code = password_parts
     else:
         password = password_input
-        mfa_code = code
+        # Usar um valor padrão de string vazia se code for None
+        # Isso evita o erro de tipo, e o próximo if vai capturar o problema
+        mfa_code = code if code is not None else ""
     
     if not mfa_code:
         raise HTTPException(

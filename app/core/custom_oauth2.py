@@ -7,6 +7,16 @@ class OAuth2MfaBearer(OAuth2PasswordBearer):
     """
     OAuth2 esquema personalizado que suporta autenticação MFA no Swagger.
     """
+    def __init__(
+        self,
+        tokenUrl: str,
+        scheme_name: Optional[str] = None,
+        description: Optional[str] = None,
+        auto_error: bool = True,
+    ):
+        super().__init__(tokenUrl=tokenUrl, scheme_name=scheme_name, description=description, auto_error=auto_error)
+        self._token_url = tokenUrl
+
     async def __call__(self, request: Request) -> Optional[str]:
         """
         Obtém o token de autorização da requisição.
@@ -35,7 +45,7 @@ class OAuth2MfaBearer(OAuth2PasswordBearer):
             "type": "oauth2",
             "flows": {
                 "password": {
-                    "tokenUrl": self.token_url,
+                    "tokenUrl": self._token_url,
                     "scopes": {}
                 }
             }
