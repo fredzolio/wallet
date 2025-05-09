@@ -14,6 +14,12 @@ pipeline {
             }
         }
         
+        stage('Prune') {
+          steps {
+            sh 'docker system prune -f'
+          }
+        }
+
         stage('Configurar Ambiente') {
             steps {
                 // Copiar arquivo de env para execução local
