@@ -23,7 +23,6 @@ pipeline {
                 sh '''
                     docker --version
                     docker-compose --version
-                    python --version
                 '''
             }
         }
