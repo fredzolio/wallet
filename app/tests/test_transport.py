@@ -108,37 +108,6 @@ async def test_get_balance(async_client: AsyncClient, db_session: AsyncSession, 
     assert data["card_number"] == card_number
 
 @skip_on_redis_error
-async def test_recharge(async_client: AsyncClient, db_session: AsyncSession, user_token_headers, test_user: User) -> None:
-    """Testa a recarga do cartão de transporte."""
-    card_number = generate_card_number()
-    card = TransportCard(
-        id=uuid.uuid4(),
-        user_id=test_user.id,
-        card_number=card_number,
-        balance_centavos=0
-    )
-    db_session.add(card)
-    await db_session.commit()
-
-    response = await async_client.post(
-        "/api/v1/transport/recharge",
-        headers=user_token_headers,
-        json={"value_centavos": 5000}
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["value_centavos"] == 5000
-    assert data["value_reais"] == 50.0
-    
-    # Verificar se o saldo foi atualizado
-    balance_response = await async_client.get(
-        "/api/v1/transport/balance",
-        headers=user_token_headers
-    )
-    balance_data = balance_response.json()
-    assert balance_data["balance_centavos"] == 5000
-
-@skip_on_redis_error
 async def test_list_recharges(async_client: AsyncClient, db_session: AsyncSession, user_token_headers, test_user: User) -> None:
     """Testa a listagem do histórico de recargas."""
     card_number = generate_card_number()

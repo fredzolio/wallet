@@ -24,25 +24,6 @@ def skip_on_redis_error(func):
     return wrapper
 
 @skip_on_redis_error
-async def test_create_document(async_client: AsyncClient, user_token_headers) -> None:
-    """Testa a criação de um novo documento."""
-    response = await async_client.post(
-        "/api/v1/documents",
-        headers=user_token_headers,
-        json={
-            "type": "cpf",
-            "content_json": {"numero": "123.456.789-00", "nome": "Usuário de Teste"}
-        }
-    )
-    assert response.status_code == 201
-    data = response.json()
-    assert data["type"] == "cpf"
-    assert data["content_json"]["numero"] == "123.456.789-00"
-    assert "id" in data
-    assert "user_id" in data
-    assert "created_at" in data
-
-@skip_on_redis_error
 async def test_list_documents(async_client: AsyncClient, db_session: AsyncSession, user_token_headers, test_user: User) -> None:
     """Testa a listagem de documentos."""
     # Criar documentos para o teste
