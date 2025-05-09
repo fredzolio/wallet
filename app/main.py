@@ -95,10 +95,6 @@ async def custom_swagger_ui_html():
             "docExpansion": "none",
             "deepLinking": True,
             "persistAuthorization": True,
-            "displayOperationId": False,
-            "syntaxHighlight": {"theme": "obsidian"},
-            "defaultModelsExpandDepth": 3,
-            "defaultModelExpandDepth": 3,
         },
     )
 
@@ -137,24 +133,32 @@ def custom_openapi():
     if "securitySchemes" not in openapi_schema["components"]:
         openapi_schema["components"]["securitySchemes"] = {}
     
-    # Adicionar esquema de segurança OAuth2 com MFA
-    openapi_schema["components"]["securitySchemes"]["OAuth2PasswordBearer"] = {
+    # Define o esquema para login normal
+    openapi_schema["components"]["securitySchemes"]["LoginNormal"] = {
         "type": "oauth2",
         "flows": {
             "password": {
                 "tokenUrl": f"{settings.API_V1_STR}/auth/login",
                 "scopes": {}
-            },
-            "implicit": {
-                "authorizationUrl": f"{settings.API_V1_STR}/auth/login-mfa",
+            }
+        },
+        "description": "Login padrão sem MFA. Use seu email e senha normalmente."
+    }
+    
+    # Define o esquema para login com MFA
+    openapi_schema["components"]["securitySchemes"]["LoginMFA"] = {
+        "type": "oauth2",
+        "flows": {
+            "password": {
+                "tokenUrl": f"{settings.API_V1_STR}/auth/login-mfa",
                 "scopes": {}
             }
         },
-        "description": "Autenticação padrão ou com MFA. Use login-mfa para autenticação de dois fatores."
+        "description": "Login com autenticação de dois fatores (MFA). Use o formato 'senha:código' no campo password ou forneça o parâmetro 'code'."
     }
     
-    # Aplicar segurança global
-    openapi_schema["security"] = [{"OAuth2PasswordBearer": []}]
+    # Aplicar segurança global (ambas as opções)
+    openapi_schema["security"] = [{"LoginNormal": []}, {"LoginMFA": []}]
     
     app.openapi_schema = openapi_schema
     return app.openapi_schema
