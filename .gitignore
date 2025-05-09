@@ -13,3 +13,5 @@ wheels/
 alembic.ini
 
 .pytest_cache/
+
+app/data/*
