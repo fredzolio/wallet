@@ -14,6 +14,13 @@ pipeline {
             }
         }
         
+        stage('Corrigir Permissões') {
+            steps {
+                sh 'find ${WORKSPACE} -type d -exec chmod 755 {} \\; || true'
+                sh 'find ${WORKSPACE} -type f -exec chmod 644 {} \\; || true'
+            }
+        }
+        
         stage('Prune') {
           steps {
             sh 'docker system prune -f'
@@ -102,26 +109,36 @@ pipeline {
     
     post {
         success {
-            echo "Pipeline executado com sucesso! Aplicações rodando em Docker."
+            node {
+                echo "Pipeline executado com sucesso! Aplicações rodando em Docker."
+            }
         }
         failure {
-            echo "Pipeline falhou. Verifique os logs para mais detalhes."
-            
-            // Capturar logs da API em caso de falha
-            sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} logs api || true'
-            
-            // Em caso de falha, tenta parar os containers
-            sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} down || true'
+            node {
+                echo "Pipeline falhou. Verifique os logs para mais detalhes."
+                
+                // Capturar logs da API em caso de falha
+                sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} logs api || true'
+                
+                // Em caso de falha, tenta parar os containers
+                sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} down || true'
+            }
         }
         cleanup {
-            // Opção 1: Manter aplicações rodando
-            echo "Aplicações continuam rodando em http://localhost:8000"
-            
-            // Opção 2: Desligar aplicações (descomente se preferir parar)
-            // sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} down'
-            
-            // Limpar workspace
-            cleanWs()
+            node {
+                // Opção 1: Manter aplicações rodando
+                echo "Aplicações continuam rodando em http://localhost:8000"
+                
+                // Opção 2: Desligar aplicações (descomente se preferir parar)
+                // sh 'docker-compose -p ${DOCKER_COMPOSE_PROJECT} down'
+                
+                // Corrigir permissões antes de limpar
+                sh 'find ${WORKSPACE} -type d -exec chmod 755 {} \\; || true'
+                sh 'find ${WORKSPACE} -type f -exec chmod 644 {} \\; || true'
+                
+                // Limpar workspace
+                cleanWs()
+            }
         }
     }
 } 
