@@ -45,6 +45,7 @@ dependencies = [
   "qrcode>=8.2",
   "pillow>=11.2.1",
   "types-qrcode>=8.2.0.20250506",
+  "itsdangerous>=2.2.0",
 ]
 
 [tool.pytest.ini_options]
