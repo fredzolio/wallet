@@ -4,6 +4,12 @@
 
 ### Features
 
+* implementa páginas HTML personalizadas para tratamento de erros e sucesso no callback de autenticação do Google, melhorando a experiência do usuário com feedback visual e opções de ação. (727d4c5)
+* aprimora o callback de autenticação do Google com verificação de código de autorização, tratamento de erros mais robusto e redirecionamento para o frontend em caso de falhas, garantindo uma melhor experiência do usuário. (e981b05)
+* refatora o callback de autenticação do Google para melhorar o tratamento de erros e simplificar a lógica de obtenção de dados do usuário, garantindo que o email seja obtido diretamente do endpoint userinfo e adicionando tratamento de exceções para maior robustez. (68ec25c)
+* aprimora o tratamento do token de autenticação no callback do Google, adicionando verificação para id_token e fallback para o endpoint de userinfo, garantindo maior robustez na obtenção dos dados do usuário. (7f0a4cc)
+* adiciona a dependência 'itsdangerous' na configuração do projeto para melhorar a segurança e o gerenciamento de sessões. (6a9e518)
+* adiciona suporte a sessões para OAuth2 e atualiza a URL de redirecionamento no callback do Google; modifica a versão e o commit no version.json. (fe74a46)
 * adiciona endpoints para registro e listagem de consumos no cartão de transporte, incluindo validações de saldo e estrutura de resposta adequada. (521bb5f)
 * ajusta a lógica de verificação do token de refresh para garantir a conversão correta de bytes para string, melhorando a robustez da autenticação. (d9fcead)
 * remove lógica de autenticação MFA do Swagger e ajusta a implementação do login MFA para utilizar um novo esquema de dados, simplificando a estrutura de segurança e melhorando a clareza do código. (c7b3d3c)
@@ -39,6 +45,7 @@
 
 ### Bug Fixes
 
+* simplifica o tratamento de exceções no callback de autenticação do Google, removendo a captura do erro específico e garantindo um retorno genérico em caso de falhas, melhorando a experiência do usuário. (bcf9f3f)
 * atualiza a URL do Prometheus no arquivo de configuração para o domínio correto, garantindo a conectividade adequada com a fonte de dados (b52917a)
 * atualiza o Jenkinsfile para substituir o domínio 'apiwallet.duckdns.org' pelo domínio configurado no arquivo .env, garantindo a correta configuração dos arquivos de Nginx e init-letsencrypt (d7fac5c)
 * corrige expressão de substituição no middleware 'prometheus-prefix' no docker-compose.yaml para garantir o roteamento correto das requisições (8f6627f)
@@ -74,6 +81,11 @@
 * simplifica a leitura e geração do changelog, atualiza o template e melhora o tratamento de erros na função de geração (429ad01)
 * atualiza Dockerfile para incluir o Git, adiciona suporte ao python-semantic-release no pyproject.toml e implementa geração de changelog com fallback para GitAnalyzer (af71a30)
 
+### Documentation
+
+* atualiza a documentação do README para incluir instruções sobre o acesso ao login via Google diretamente no navegador, melhorando a clareza das informações sobre a API. (3b2404d)
+* remove badge de CI/CD do README e simplifica a documentação, mantendo foco nas funcionalidades da API. (1b67354)
+
 ### Chores
 
 * atualiza o docker-compose.yaml para incluir a rede 'monitoring-network' nos serviços e adiciona plugins ao Grafana; remove arquivo de dashboard desnecessário (662aab8)
@@ -91,4 +103,9 @@
 * simplifica a instalação de dependências no CI removendo a opção de instalação em modo editável (caf86c6)
 * adiciona app/data ao .gitignore para evitar controle de versão (8aea807)
 * remove app/data do controle de versão (fb73655)
+
+### Other Changes
+
+* remove comentários desnecessários e melhora a documentação no README, atualizando informações sobre a API e suas funcionalidades (5d14673)
+* remover textos errados (35804a0)
 
