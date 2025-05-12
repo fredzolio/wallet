@@ -347,57 +347,58 @@ async def google_callback(
         )
     
     # Obter token do Google
-    token = await oauth.google.authorize_access_token(request)
-    
-    # Obter dados do usuário
-    # Verificar se temos id_token disponível
-    if "id_token" in token:
-        user_data = await oauth.google.parse_id_token(request, token)
-    else:
-        # Fallback para userinfo endpoint se não tivermos id_token
-        user_data = await oauth.google.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
-        if isinstance(user_data, dict):
-            user_data = user_data
-        else:
-            user_data = user_data.json()
-    
-    email = user_data.get("email")
-    
-    if not email:
+    try:
+        token = await oauth.google.authorize_access_token(request)
+        
+        # Obter dados do usuário diretamente do endpoint userinfo
+        resp = await oauth.google.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
+        user_data = resp.json() if hasattr(resp, 'json') else resp
+        
+        email = user_data.get("email")
+        
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Não foi possível obter o email do Google"
+            )
+        
+        # Buscar usuário existente ou criar novo
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            # Criar novo usuário
+            random_password = secrets.token_urlsafe(12)
+            user = User(
+                email=email,
+                hashed_password=hash_password(random_password),
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+        
+        # Criar tokens
+        access_token = create_access_token(user.id)
+        refresh_token_jwt = create_refresh_token(user.id)
+        
+        decoded_payload_for_jti = decode_token(refresh_token_jwt)
+        if not decoded_payload_for_jti or "jti" not in decoded_payload_for_jti:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Falha ao obter JTI do refresh token para Google callback")
+        refresh_jti = decoded_payload_for_jti["jti"]
+        
+        # Armazenar refresh token
+        await redis.set(f"refresh_token_jti:{refresh_jti}", str(user.id), ex=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)
+        
+        # Redirecionar para frontend com tokens
+        frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
+        redirect_url = f"{frontend_url}?access_token={access_token}&refresh_token={refresh_token_jwt}"
+        
+        return RedirectResponse(url=redirect_url)
+        
+    except Exception as e:
+        # Tratar melhor os erros para debugging
+        error_detail = f"Erro durante autenticação Google: {str(e)}"
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não foi possível obter o email do Google"
+            detail=error_detail
         )
-    
-    # Buscar usuário existente ou criar novo
-    result = await db.execute(select(User).where(User.email == email))
-    user = result.scalar_one_or_none()
-    
-    if not user:
-        # Criar novo usuário
-        random_password = secrets.token_urlsafe(12)
-        user = User(
-            email=email,
-            hashed_password=hash_password(random_password),
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-    
-    # Criar tokens
-    access_token = create_access_token(user.id)
-    refresh_token_jwt = create_refresh_token(user.id)
-    
-    decoded_payload_for_jti = decode_token(refresh_token_jwt)
-    if not decoded_payload_for_jti or "jti" not in decoded_payload_for_jti:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Falha ao obter JTI do refresh token para Google callback")
-    refresh_jti = decoded_payload_for_jti["jti"]
-    
-    # Armazenar refresh token
-    await redis.set(f"refresh_token_jti:{refresh_jti}", str(user.id), ex=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)
-    
-    # Redirecionar para frontend com tokens
-    frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
-    redirect_url = f"{frontend_url}?access_token={access_token}&refresh_token={refresh_token_jwt}"
-    
-    return RedirectResponse(url=redirect_url)
