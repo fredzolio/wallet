@@ -151,7 +151,7 @@ uv run pytest app/tests/test_auth.py -v
 
 1. Clone o repositório
    ```bash
-   git clone https://github.com/seu-usuario/wallet.git
+   git clone https://github.com/fredzolio/wallet.git
    cd wallet
    ```
 
