@@ -286,6 +286,9 @@ Para gerar/atualizar o changelog manualmente:
 uv run taskipy changelog
 ```
 
+## Imagem da pipeline estruturada no Jenkins funcionando
+![image](https://github.com/user-attachments/assets/0ab54f2b-ed7b-492b-a3ea-a6db5d6d13ad)
+
 ## Licença
 
 Este projeto é distribuído sob a licença MIT.
