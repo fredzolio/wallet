@@ -372,7 +372,7 @@ async def google_callback(
                         token = await oauth.google.authorize_access_token(request)
                         resp = await oauth.google.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
                         user_data = resp.json() if hasattr(resp, 'json') else resp
-                    except Exception as e:
+                    except Exception:
                         # Se ainda falhar, retornamos um erro mais genérico para o frontend
                         # e redirecionamos para uma página de erro ou login
                         frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
