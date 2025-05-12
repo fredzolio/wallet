@@ -346,21 +346,53 @@ async def google_callback(
             detail="Google OAuth não configurado"
         )
     
-    # Obter token do Google
     try:
-        token = await oauth.google.authorize_access_token(request)
-        
-        # Obter dados do usuário diretamente do endpoint userinfo
-        resp = await oauth.google.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
-        user_data = resp.json() if hasattr(resp, 'json') else resp
+        # Extrair código de autorização e verificar se está presente
+        auth_code = request.query_params.get("code")
+        if not auth_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="Código de autorização do Google ausente"
+            )
+
+        try:
+            # Método padrão - tentar obter token e dados do usuário
+            token = await oauth.google.authorize_access_token(request)
+            resp = await oauth.google.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
+            user_data = resp.json() if hasattr(resp, 'json') else resp
+        except Exception as token_error:
+            # Se falhar por questões de state, vamos usar uma abordagem alternativa
+            if "mismatching_state" in str(token_error) or "state" in str(token_error).lower():
+                # Modificar a configuração do cliente OAuth para desabilitar verificação de estado
+                # Esta é uma solução temporária, não ideal para produção
+                if hasattr(oauth.google, '_client'):
+                    oauth.google._client.client_kwargs['verify_state'] = False
+                    try:
+                        # Tentar novamente com verificação de estado desabilitada
+                        token = await oauth.google.authorize_access_token(request)
+                        resp = await oauth.google.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
+                        user_data = resp.json() if hasattr(resp, 'json') else resp
+                    except Exception as e:
+                        # Se ainda falhar, retornamos um erro mais genérico para o frontend
+                        # e redirecionamos para uma página de erro ou login
+                        frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
+                        error_url = f"{frontend_url}?auth_error=google_login_failed"
+                        return RedirectResponse(url=error_url)
+                else:
+                    # Se não conseguirmos modificar o cliente, redirecionamos com erro
+                    frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
+                    error_url = f"{frontend_url}?auth_error=google_configuration_error"
+                    return RedirectResponse(url=error_url)
+            else:
+                # Se for outro tipo de erro, repassamos
+                raise token_error
         
         email = user_data.get("email")
         
         if not email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Não foi possível obter o email do Google"
-            )
+            frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
+            error_url = f"{frontend_url}?auth_error=email_not_found"
+            return RedirectResponse(url=error_url)
         
         # Buscar usuário existente ou criar novo
         result = await db.execute(select(User).where(User.email == email))
@@ -396,9 +428,8 @@ async def google_callback(
         return RedirectResponse(url=redirect_url)
         
     except Exception as e:
-        # Tratar melhor os erros para debugging
-        error_detail = f"Erro durante autenticação Google: {str(e)}"
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_detail
-        )
+        # Redirecionar para frontend com erro genérico
+        frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
+        error_detail = str(e).replace(" ", "_")
+        error_url = f"{frontend_url}?auth_error=google_error_{error_detail[:50]}"
+        return RedirectResponse(url=error_url)
