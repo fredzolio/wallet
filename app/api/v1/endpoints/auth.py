@@ -350,7 +350,17 @@ async def google_callback(
     token = await oauth.google.authorize_access_token(request)
     
     # Obter dados do usuário
-    user_data = await oauth.google.parse_id_token(request, token)
+    # Verificar se temos id_token disponível
+    if "id_token" in token:
+        user_data = await oauth.google.parse_id_token(request, token)
+    else:
+        # Fallback para userinfo endpoint se não tivermos id_token
+        user_data = await oauth.google.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
+        if isinstance(user_data, dict):
+            user_data = user_data
+        else:
+            user_data = user_data.json()
+    
     email = user_data.get("email")
     
     if not email:
