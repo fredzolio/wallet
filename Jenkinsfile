@@ -7,8 +7,8 @@ pipeline {
     environment {
         DOCKER_COMPOSE_PROJECT = 'wallet'
         ENV_FILE               = credentials('wallet-env-file')
-        JENKINS_UID            = '115'   // confirme com ps -o uid
-        JENKINS_GID            = '121'   // confirme com ps -o gid
+        JENKINS_UID            = '115'
+        JENKINS_GID            = '121'
     }
 
     options {
@@ -19,14 +19,11 @@ pipeline {
     stages {
         stage('Prep workspace + Checkout') {
             steps {
-                // Conserta dono de execuções anteriores
                 sh '''
                     docker run --rm -u 0:0 \
                       -v "$WORKSPACE":"$WORKSPACE" -w "$WORKSPACE" alpine \
                       chown -R ${JENKINS_UID}:${JENKINS_GID} . || true
                 '''
-                // NÃO deleteDir: se a stack anterior estiver rodando,
-                // o workspace está em uso. Basta garantir permissões.
                 checkout scm
             }
         }
@@ -88,10 +85,8 @@ pipeline {
         failure {
             echo '❌ Falhou – derrubando stack e limpando workspace.'
 
-            // Derruba stack e remove volumes só em falha
             sh 'docker compose -p ${DOCKER_COMPOSE_PROJECT} down -v || true'
 
-            // Ajusta permissão e APAGA o workspace (agora nada está montado)
             sh '''
                 docker run --rm -u 0:0 \
                   -v "$WORKSPACE":"$WORKSPACE" -w "$WORKSPACE" alpine \

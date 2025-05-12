@@ -138,7 +138,6 @@ async def async_client(db_session: AsyncSession, test_redis, test_limiter) -> As
     original_middlewares = fastapi_app.user_middleware.copy()
     
     # Filtra os middlewares sem depender da verificação __name__
-    # Isso evita o erro de tipagem do mypy
     filtered_middlewares: List[Any] = []
     for middleware in fastapi_app.user_middleware:
         # Verifica se o objeto cls do middleware tem um atributo __module__ que contém 'slowapi'
