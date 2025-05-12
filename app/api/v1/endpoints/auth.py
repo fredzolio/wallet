@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import secrets
-from starlette.responses import RedirectResponse
+from starlette.responses import HTMLResponse
 import uuid
 import qrcode
 import io
@@ -350,10 +350,31 @@ async def google_callback(
         # Extrair código de autorização e verificar se está presente
         auth_code = request.query_params.get("code")
         if not auth_code:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
-                detail="Código de autorização do Google ausente"
-            )
+            return HTMLResponse(content="""
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>Falha no Login</title>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; text-align: center; background-color: #f8f9fa; }
+                        .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                        h1 { color: #dc3545; }
+                        p { margin: 20px 0; line-height: 1.5; }
+                        .btn { display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>Falha no Login</h1>
+                        <p>Não foi possível obter o código de autorização do Google.</p>
+                        <p>Por favor, tente novamente.</p>
+                        <a href="/api/v1/auth/google/login" class="btn">Tentar Novamente</a>
+                    </div>
+                </body>
+            </html>
+            """, status_code=400)
 
         try:
             # Método padrão - tentar obter token e dados do usuário
@@ -373,26 +394,117 @@ async def google_callback(
                         resp = await oauth.google.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
                         user_data = resp.json() if hasattr(resp, 'json') else resp
                     except Exception:
-                        # Se ainda falhar, retornamos um erro mais genérico para o frontend
-                        # e redirecionamos para uma página de erro ou login
-                        frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
-                        error_url = f"{frontend_url}?auth_error=google_login_failed"
-                        return RedirectResponse(url=error_url)
+                        # Se ainda falhar, mostrar página de erro
+                        return HTMLResponse(content="""
+                        <!DOCTYPE html>
+                        <html>
+                            <head>
+                                <title>Falha no Login</title>
+                                <meta charset="UTF-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <style>
+                                    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; text-align: center; background-color: #f8f9fa; }
+                                    .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                                    h1 { color: #dc3545; }
+                                    p { margin: 20px 0; line-height: 1.5; }
+                                    .btn { display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+                                </style>
+                            </head>
+                            <body>
+                                <div class="container">
+                                    <h1>Falha no Login</h1>
+                                    <p>Ocorreu um erro durante a autenticação com o Google.</p>
+                                    <p>Por favor, tente novamente.</p>
+                                    <a href="/api/v1/auth/google/login" class="btn">Tentar Novamente</a>
+                                </div>
+                            </body>
+                        </html>
+                        """, status_code=400)
                 else:
-                    # Se não conseguirmos modificar o cliente, redirecionamos com erro
-                    frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
-                    error_url = f"{frontend_url}?auth_error=google_configuration_error"
-                    return RedirectResponse(url=error_url)
+                    # Se não conseguirmos modificar o cliente, mostrar página de erro
+                    return HTMLResponse(content="""
+                    <!DOCTYPE html>
+                    <html>
+                        <head>
+                            <title>Falha no Login</title>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <style>
+                                body { font-family: Arial, sans-serif; margin: 0; padding: 20px; text-align: center; background-color: #f8f9fa; }
+                                .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                                h1 { color: #dc3545; }
+                                p { margin: 20px 0; line-height: 1.5; }
+                                .btn { display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <h1>Falha na Configuração</h1>
+                                <p>Erro na configuração da autenticação com o Google.</p>
+                                <p>Entre em contato com o suporte.</p>
+                                <a href="/api/v1/auth/google/login" class="btn">Tentar Novamente</a>
+                            </div>
+                        </body>
+                    </html>
+                    """, status_code=500)
             else:
-                # Se for outro tipo de erro, repassamos
-                raise token_error
+                # Se for outro tipo de erro, mostrar página de erro
+                return HTMLResponse(content=f"""
+                <!DOCTYPE html>
+                <html>
+                    <head>
+                        <title>Falha no Login</title>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <style>
+                            body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; text-align: center; background-color: #f8f9fa; }}
+                            .container {{ max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }}
+                            h1 {{ color: #dc3545; }}
+                            p {{ margin: 20px 0; line-height: 1.5; }}
+                            .btn {{ display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+                            .error-details {{ font-size: 0.8em; color: #6c757d; margin-top: 20px; }}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <h1>Falha no Login</h1>
+                            <p>Ocorreu um erro durante a autenticação com o Google.</p>
+                            <p>Por favor, tente novamente.</p>
+                            <div class="error-details">Detalhes: {str(token_error)[:100]}</div>
+                            <a href="/api/v1/auth/google/login" class="btn">Tentar Novamente</a>
+                        </div>
+                    </body>
+                </html>
+                """, status_code=400)
         
         email = user_data.get("email")
         
         if not email:
-            frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
-            error_url = f"{frontend_url}?auth_error=email_not_found"
-            return RedirectResponse(url=error_url)
+            return HTMLResponse(content="""
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>Falha no Login</title>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; text-align: center; background-color: #f8f9fa; }
+                        .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                        h1 { color: #dc3545; }
+                        p { margin: 20px 0; line-height: 1.5; }
+                        .btn { display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>Falha no Login</h1>
+                        <p>Não foi possível obter o email da sua conta Google.</p>
+                        <p>Verifique as permissões e tente novamente.</p>
+                        <a href="/api/v1/auth/google/login" class="btn">Tentar Novamente</a>
+                    </div>
+                </body>
+            </html>
+            """, status_code=400)
         
         # Buscar usuário existente ou criar novo
         result = await db.execute(select(User).where(User.email == email))
@@ -415,21 +527,111 @@ async def google_callback(
         
         decoded_payload_for_jti = decode_token(refresh_token_jwt)
         if not decoded_payload_for_jti or "jti" not in decoded_payload_for_jti:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Falha ao obter JTI do refresh token para Google callback")
+            return HTMLResponse(content="""
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>Falha na Geração de Token</title>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; text-align: center; background-color: #f8f9fa; }
+                        .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                        h1 { color: #dc3545; }
+                        p { margin: 20px 0; line-height: 1.5; }
+                        .btn { display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>Falha na Geração de Token</h1>
+                        <p>Não foi possível gerar o token de acesso.</p>
+                        <p>Entre em contato com o suporte.</p>
+                        <a href="/api/v1/auth/google/login" class="btn">Tentar Novamente</a>
+                    </div>
+                </body>
+            </html>
+            """, status_code=500)
+        
         refresh_jti = decoded_payload_for_jti["jti"]
         
         # Armazenar refresh token
         await redis.set(f"refresh_token_jti:{refresh_jti}", str(user.id), ex=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)
         
-        # Redirecionar para frontend com tokens
-        frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
-        redirect_url = f"{frontend_url}?access_token={access_token}&refresh_token={refresh_token_jwt}"
-        
-        return RedirectResponse(url=redirect_url)
+        # Exibir página de sucesso com os tokens
+        return HTMLResponse(content=f"""
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>Login Realizado com Sucesso</title>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; text-align: center; background-color: #f8f9fa; }}
+                    .container {{ max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }}
+                    h1 {{ color: #28a745; }}
+                    p {{ margin: 20px 0; line-height: 1.5; }}
+                    .token-box {{ background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; text-align: left; word-break: break-all; }}
+                    h3 {{ margin: 10px 0; color: #007bff; }}
+                    .btn {{ display: inline-block; background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>Login Realizado com Sucesso</h1>
+                    <p>Olá, <strong>{email}</strong>! Seu login foi realizado com sucesso.</p>
+                    
+                    <h3>Access Token:</h3>
+                    <div class="token-box">{access_token}</div>
+                    
+                    <h3>Refresh Token:</h3>
+                    <div class="token-box">{refresh_token_jwt}</div>
+                    
+                    <p>Guarde estes tokens em um local seguro. Eles são necessários para acessar os recursos protegidos da API.</p>
+                    
+                    <a href="javascript:void(0)" class="btn" onclick="copyTokens()">Copiar Tokens</a>
+                    
+                    <script>
+                        function copyTokens() {{
+                            const tokens = `Access Token: {access_token}\\n\\nRefresh Token: {refresh_token_jwt}`;
+                            navigator.clipboard.writeText(tokens).then(function() {{
+                                alert('Tokens copiados para a área de transferência!');
+                            }}, function(err) {{
+                                alert('Erro ao copiar tokens: ' + err);
+                            }});
+                        }}
+                    </script>
+                </div>
+            </body>
+        </html>
+        """)
         
     except Exception as e:
-        # Redirecionar para frontend com erro genérico
-        frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
-        error_detail = str(e).replace(" ", "_")
-        error_url = f"{frontend_url}?auth_error=google_error_{error_detail[:50]}"
-        return RedirectResponse(url=error_url)
+        # Mostrar página de erro genérica
+        return HTMLResponse(content=f"""
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>Falha no Login</title>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; text-align: center; background-color: #f8f9fa; }}
+                    .container {{ max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }}
+                    h1 {{ color: #dc3545; }}
+                    p {{ margin: 20px 0; line-height: 1.5; }}
+                    .btn {{ display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+                    .error-details {{ font-size: 0.8em; color: #6c757d; margin-top: 20px; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>Falha no Login</h1>
+                    <p>Ocorreu um erro inesperado durante a autenticação.</p>
+                    <p>Por favor, tente novamente.</p>
+                    <div class="error-details">Detalhes: {str(e)[:100]}</div>
+                    <a href="/api/v1/auth/google/login" class="btn">Tentar Novamente</a>
+                </div>
+            </body>
+        </html>
+        """, status_code=500)
