@@ -1,7 +1,5 @@
 # Wallet API - Carteira Digital da Prefeitura do Rio de Janeiro - Frederico Zolio
 
-[![CI/CD Pipeline](https://github.com/usuario/wallet/actions/workflows/ci.yml/badge.svg)](https://github.com/usuario/wallet/actions/workflows/ci.yml)
-
 ## Visão Geral
 
 Este projeto implementa uma API para Carteira Digital que permite aos cidadãos do Rio de Janeiro gerenciar documentos digitais, consultar e recarregar passes de transporte público, além de interagir com um chatbot para esclarecimento de dúvidas sobre serviços municipais.
