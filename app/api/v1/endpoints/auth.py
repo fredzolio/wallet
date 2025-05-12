@@ -382,19 +382,14 @@ async def google_callback(
             resp = await oauth.google.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
             user_data = resp.json() if hasattr(resp, 'json') else resp
         except Exception as token_error:
-            # Se falhar por questões de state, vamos usar uma abordagem alternativa
             if "mismatching_state" in str(token_error) or "state" in str(token_error).lower():
-                # Modificar a configuração do cliente OAuth para desabilitar verificação de estado
-                # Esta é uma solução temporária, não ideal para produção
                 if hasattr(oauth.google, '_client'):
                     oauth.google._client.client_kwargs['verify_state'] = False
                     try:
-                        # Tentar novamente com verificação de estado desabilitada
                         token = await oauth.google.authorize_access_token(request)
                         resp = await oauth.google.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
                         user_data = resp.json() if hasattr(resp, 'json') else resp
                     except Exception:
-                        # Se ainda falhar, mostrar página de erro
                         return HTMLResponse(content="""
                         <!DOCTYPE html>
                         <html>
@@ -421,7 +416,6 @@ async def google_callback(
                         </html>
                         """, status_code=400)
                 else:
-                    # Se não conseguirmos modificar o cliente, mostrar página de erro
                     return HTMLResponse(content="""
                     <!DOCTYPE html>
                     <html>
@@ -448,7 +442,6 @@ async def google_callback(
                     </html>
                     """, status_code=500)
             else:
-                # Se for outro tipo de erro, mostrar página de erro
                 return HTMLResponse(content=f"""
                 <!DOCTYPE html>
                 <html>
@@ -607,7 +600,6 @@ async def google_callback(
         """)
         
     except Exception as e:
-        # Mostrar página de erro genérica
         return HTMLResponse(content=f"""
         <!DOCTYPE html>
         <html>
