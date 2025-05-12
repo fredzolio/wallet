@@ -31,9 +31,9 @@ pipeline {
         stage('Configurar ambiente') {
             steps {
                 sh '''
-                    rm -rf .env                    # <-- NOVO
-                    cp "${ENV_FILE}" .env          # secret → workspace
-                    chmod 600 .env                 # opcional
+                    rm -rf .env                    
+                    cp "${ENV_FILE}" .env          
+                    chmod 600 .env                 
 
                     docker compose version
                     [ -f alembic.ini ] || cp alembic.ini.example alembic.ini
