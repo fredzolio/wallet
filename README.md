@@ -197,7 +197,7 @@ A documentação completa da API está disponível em:
 - `POST /api/v1/auth/register` - Registrar novo usuário
 - `POST /api/v1/auth/login` - Login com email/senha
 - `POST /api/v1/auth/login-mfa` - Login com autenticação de dois fatores
-- `GET /api/v1/auth/google/login` - Login via Google
+- `GET /api/v1/auth/google/login` - Login via Google (Deve ser acessado diretamente no navegador através da URL http://apiwallet.duckdns.org:8000/api/v1/auth/google/login, não pelo Swagger)
 - `POST /api/v1/auth/mfa/setup` - Configurar autenticação de dois fatores
 
 ### Documentos
