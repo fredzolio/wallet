@@ -295,4 +295,4 @@ Este projeto é distribuído sob a licença MIT.
 
 ## Contato
 
-Para dúvidas ou sugestões, entre em contato com [frederico.zolio@prefeitura.rio](mailto:frederico.zolio@prefeitura.rio).
+Frederico Zolio Gonzaga Diniz, entre em contato comigo em: [frederico.zolio@prefeitura.rio](mailto:frederico.zolio@prefeitura.rio).
