@@ -48,3 +48,27 @@ class RecargaList(BaseModel):
     """Schema para listar múltiplas recargas."""
     items: List[RecargaResponse]
     total: int
+
+class ConsumoBase(BaseModel):
+    """Schema base para consumo de saldo."""
+    value_centavos: int = Field(..., gt=0, description="Valor do consumo em centavos")
+    description: str = Field(..., description="Descrição do consumo")
+
+class ConsumoCreate(ConsumoBase):
+    """Schema para criação de consumo."""
+    pass
+
+class ConsumoResponse(ConsumoBase):
+    """Schema para resposta com dados do consumo."""
+    id: uuid.UUID
+    card_id: uuid.UUID
+    timestamp: datetime
+    value_reais: float
+
+    class Config:
+        from_attributes = True
+
+class ConsumoList(BaseModel):
+    """Schema para listar múltiplos consumos."""
+    items: List[ConsumoResponse]
+    total: int

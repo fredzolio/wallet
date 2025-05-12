@@ -25,3 +25,4 @@ class TransportCard(Base):
     # Relacionamentos
     owner = relationship("User", back_populates="transport_card")
     recargas = relationship("Recarga", back_populates="card", cascade="all, delete-orphan")
+    consumos = relationship("Consumo", back_populates="card", cascade="all, delete-orphan")

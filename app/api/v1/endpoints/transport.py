@@ -7,6 +7,7 @@ from app.db.session import get_db
 from app.api.v1.deps import limiter, redis
 from app.models.transport import TransportCard
 from app.models.recarga import Recarga
+from app.models.consumo import Consumo
 from app.models.user import User
 from app.schemas.transport import (
     TransportCardCreate, 
@@ -14,7 +15,10 @@ from app.schemas.transport import (
     BalanceResponse,
     RecargaCreate,
     RecargaResponse,
-    RecargaList
+    RecargaList,
+    ConsumoCreate,
+    ConsumoResponse,
+    ConsumoList
 )
 
 router = APIRouter(prefix="/transport")
@@ -149,6 +153,62 @@ async def recharge(
     
     return recarga
 
+@router.post("/consume", response_model=ConsumoResponse)
+@limiter.limit("10/minute")
+async def consume(
+    request: Request,
+    consumo_in: ConsumoCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Registra um consumo no cartão de transporte do usuário atual.
+    
+    Exemplo:
+    ```json
+    {
+        "value_centavos": 450,  // R$ 4,50
+        "description": "Passagem de ônibus"
+    }
+    ```
+    """
+    # Verificar se o usuário tem cartão
+    if not current_user.transport_card:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não possui cartão de transporte"
+        )
+    
+    card = current_user.transport_card
+    
+    # Adquirir lock distribuído para evitar condições de corrida
+    async with redis.lock(f"card_consume:{card.id}", timeout=10):
+        # Verificar se há saldo suficiente
+        if card.balance_centavos < consumo_in.value_centavos:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Saldo insuficiente"
+            )
+        
+        # Registrar o consumo
+        consumo = Consumo(
+            card_id=card.id,
+            value_centavos=consumo_in.value_centavos,
+            description=consumo_in.description
+        )
+        
+        # Atualizar o saldo do cartão
+        card.balance_centavos -= consumo_in.value_centavos
+        
+        db.add(consumo)
+        await db.commit()
+        await db.refresh(consumo)
+    
+    # Adicionar valor em reais para a resposta
+    setattr(consumo, "value_reais", centavos_para_reais(consumo.value_centavos))
+    
+    return consumo
+
 @router.get("/recharges", response_model=RecargaList)
 async def list_recharges(
     skip: int = 0,
@@ -189,5 +249,48 @@ async def list_recharges(
     
     return RecargaList(
         items=recarga_responses,
+        total=total or 0  # Garantir que total é sempre int, não int | None
+    )
+
+@router.get("/consumos", response_model=ConsumoList)
+async def list_consumos(
+    skip: int = 0,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Lista o histórico de consumos do cartão de transporte do usuário atual.
+    """
+    # Verificar se o usuário tem cartão
+    if not current_user.transport_card:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não possui cartão de transporte"
+        )
+    
+    card = current_user.transport_card
+    
+    # Buscar consumos
+    query = select(Consumo).where(Consumo.card_id == card.id)
+    query = query.order_by(Consumo.timestamp.desc()).offset(skip).limit(limit)
+    
+    result = await db.execute(query)
+    consumos = result.scalars().all()
+    
+    # Adicionar value_reais para cada consumo
+    for consumo in consumos:
+        setattr(consumo, "value_reais", centavos_para_reais(consumo.value_centavos))
+    
+    # Contar total
+    count_query = select(func.count(Consumo.id)).where(Consumo.card_id == card.id)
+    count_result = await db.execute(count_query)
+    total = count_result.scalar()
+    
+    # Converter para lista de ConsumoResponse para atender à tipagem esperada
+    consumo_responses = [ConsumoResponse.model_validate(consumo) for consumo in consumos]
+    
+    return ConsumoList(
+        items=consumo_responses,
         total=total or 0  # Garantir que total é sempre int, não int | None
     )
