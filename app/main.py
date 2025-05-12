@@ -5,6 +5,7 @@ from fastapi.openapi.utils import get_openapi
 from prometheus_fastapi_instrumentator import Instrumentator
 import logging
 from contextlib import asynccontextmanager
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.health import router as health_router
 from app.api.v1.endpoints.auth import router as auth_router
@@ -68,6 +69,9 @@ async def rate_limit_exceeded_handler(request, exc):
     )
 
 app.add_middleware(SlowAPIMiddleware)
+
+# Configuração de sessão para OAuth2
+app.add_middleware(SessionMiddleware, secret_key=str(settings.SECRET_KEY))
 
 # Configuração CORS
 app.add_middleware(

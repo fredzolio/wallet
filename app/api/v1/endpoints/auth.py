@@ -387,7 +387,7 @@ async def google_callback(
     await redis.set(f"refresh_token_jti:{refresh_jti}", str(user.id), ex=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)
     
     # Redirecionar para frontend com tokens
-    frontend_url = ""
+    frontend_url = settings.OAUTH_CALLBACK_URL or "http://localhost:3000"
     redirect_url = f"{frontend_url}?access_token={access_token}&refresh_token={refresh_token_jwt}"
     
     return RedirectResponse(url=redirect_url)

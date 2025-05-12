@@ -1,9 +1,18 @@
 # Changelog
 
-## Unreleased (2025-05-09)
+## Unreleased (2025-05-12)
 
 ### Features
 
+* adiciona endpoints para registro e listagem de consumos no cartão de transporte, incluindo validações de saldo e estrutura de resposta adequada. (521bb5f)
+* ajusta a lógica de verificação do token de refresh para garantir a conversão correta de bytes para string, melhorando a robustez da autenticação. (d9fcead)
+* remove lógica de autenticação MFA do Swagger e ajusta a implementação do login MFA para utilizar um novo esquema de dados, simplificando a estrutura de segurança e melhorando a clareza do código. (c7b3d3c)
+* redefine esquemas de segurança no OpenAPI para suportar login normal e com MFA, melhorando a documentação da autenticação (87630d3)
+* adiciona nova tarefa de verificação no pyproject.toml e atualiza a configuração do Swagger UI para melhorar a exibição e a experiência do usuário (7ee61aa)
+* aprimora teste de autenticação para verificar mensagens de erro em inglês e português (01787a7)
+* ajusta a lógica de autenticação MFA para permitir um valor padrão de string vazia no parâmetro 'code' e modifica a classe OAuth2MfaBearer para armazenar a URL do token de forma consistente. (e14d68e)
+* implementa autenticação com MFA, permitindo login com código MFA no formato 'senha:código' ou como parâmetro separado; atualiza o esquema de segurança OAuth2 e ajusta a lógica de login para suportar MFA. (93c7a93)
+* atualiza o CHANGELOG.md com informações sobre a nova dependência 'types-qrcode' e ajustes na lógica de parsing; modifica a versão e o commit no version.json; ajusta o schema MFASetup para definir valores padrão e exemplos para a imagem do QR code. (ffe8a11)
 * atualiza o CHANGELOG.md com novas informações sobre suporte à geração de QR code na configuração de MFA e ajustes na lógica de parsing; modifica a versão e o commit no version.json. (e1cb0fc)
 * adiciona suporte para geração de QR code na configuração de MFA, incluindo nova dependência 'qrcode' e 'pillow' no pyproject.toml; atualiza o schema MFASetup para incluir a imagem do QR code em base64. (7786fed)
 * atualiza o CHANGELOG.md com informações sobre gerenciamento de dependências e ajustes na lógica de parsing; modifica changelog.py para simplificar a formatação e garantir fallback em caso de erro, além de atualizar a versão e o commit no version.json. (0f7d6bc)
