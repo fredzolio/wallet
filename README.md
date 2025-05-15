@@ -1,4 +1,4 @@
-# Wallet API - Carteira Digital da Prefeitura do Rio de Janeiro - Frederico Zolio
+# Wallet API - Carteira Digital da Prefeitura do Rio de Janeiro
 
 ## Visão Geral
 
@@ -295,4 +295,4 @@ Este projeto é distribuído sob a licença MIT.
 
 ## Contato
 
-Frederico Zolio Gonzaga Diniz, entre em contato comigo em: [frederico.zolio@prefeitura.rio](mailto:frederico.zolio@prefeitura.rio).
+Frederico Zolio Gonzaga Diniz, entre em contato comigo em: [fredzolio@live.com](mailto:fredzolio@live.com).
